@@ -1,0 +1,165 @@
+# docker-compose.override.yml
+# 开发热重载：挂载本地代码卷，启用 watchfiles 自动重载
+# 使用方式：docker compose -f docker-compose.dev.yml -f docker-compose.override.yml up
+
+version: "3.8"
+
+services:
+  # ============================================
+  # Application Services (dev hot-reload)
+  # ============================================
+  agent-service:
+    build:
+      context: ./services/agent-service
+      dockerfile: Dockerfile
+    container_name: datapilot-agent
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./services/agent-service/src:/app/src
+    environment:
+      AGENT_PORT: "8000"
+      AGENT_HOST: "0.0.0.0"
+      AGENT_DATABASE_URL: "postgresql+asyncpg://datapilot:datapilot@postgres:5432/datapilot"
+      AGENT_REDIS_URL: "redis://redis:6379/0"
+      AGENT_LOG_LEVEL: "DEBUG"
+      AGENT_DEBUG: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["uv", "run", "python", "-m", "datapilot_agent", "--reload"]
+
+  semantic-service:
+    build:
+      context: ./services/semantic-service
+      dockerfile: Dockerfile
+    container_name: datapilot-semantic
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./services/semantic-service/src:/app/src
+    environment:
+      SEMANTIC_PORT: "8001"
+      SEMANTIC_DATABASE_URL: "postgresql+asyncpg://datapilot:datapilot@postgres:5432/datapilot"
+      SEMANTIC_REDIS_URL: "redis://redis:6379/0"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["uv", "run", "python", "-m", "datapilot_semantic", "--reload"]
+
+  sql-generator-service:
+    build:
+      context: ./services/sql-generator-service
+      dockerfile: Dockerfile
+    container_name: datapilot-sqlgen
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./services/sql-generator-service/src:/app/src
+    environment:
+      SQLGEN_PORT: "8002"
+      SQLGEN_DATABASE_URL: "postgresql+asyncpg://datapilot:datapilot@postgres:5432/datapilot"
+      SQLGEN_REDIS_URL: "redis://redis:6379/0"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["uv", "run", "python", "-m", "datapilot_sqlgen", "--reload"]
+
+  query-executor-service:
+    build:
+      context: ./services/query-executor-service
+      dockerfile: Dockerfile
+    container_name: datapilot-queryexec
+    ports:
+      - "8003:8003"
+    volumes:
+      - ./services/query-executor-service/src:/app/src
+    environment:
+      QUERYEXEC_PORT: "8003"
+      QUERYEXEC_REDIS_URL: "redis://redis:6379/0"
+      QUERYEXEC_MINIO_ENDPOINT: "minio:9000"
+    depends_on:
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    command: ["uv", "run", "python", "-m", "datapilot_queryexec", "--reload"]
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: datapilot-auth
+    ports:
+      - "8004:8004"
+    volumes:
+      - ./services/auth-service/src:/app/src
+    environment:
+      AUTH_PORT: "8004"
+      AUTH_DATABASE_URL: "postgresql+asyncpg://datapilot:datapilot@postgres:5432/datapilot"
+      JWT_SECRET_KEY: "dev-secret-key-change-in-production-32chars!"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["uv", "run", "python", "-m", "datapilot_auth", "--reload"]
+
+  guardrail-service:
+    build:
+      context: ./services/guardrail-service
+      dockerfile: Dockerfile
+    container_name: datapilot-guardrail
+    ports:
+      - "8005:8005"
+    volumes:
+      - ./services/guardrail-service/src:/app/src
+    environment:
+      GUARDRAIL_PORT: "8005"
+      GUARDRAIL_DATABASE_URL: "postgresql+asyncpg://datapilot:datapilot@postgres:5432/datapilot"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["uv", "run", "python", "-m", "datapilot_guardrail", "--reload"]
+
+  session-service:
+    build:
+      context: ./services/session-service
+      dockerfile: Dockerfile
+    container_name: datapilot-session
+    ports:
+      - "8006:8006"
+    volumes:
+      - ./services/session-service/src:/app/src
+    environment:
+      SESSION_PORT: "8006"
+      SESSION_DATABASE_URL: "postgresql+asyncpg://datapilot:datapilot@postgres:5432/datapilot"
+      SESSION_REDIS_URL: "redis://redis:6379/0"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["uv", "run", "python", "-m", "datapilot_session", "--reload"]
+
+  # ============================================
+  # APISIX Gateway (dev)
+  # ============================================
+  apisix:
+    image: apache/apisix:latest-debian
+    container_name: datapilot-apisix
+    ports:
+      - "9180:9180"   # APISIX admin
+      - "9080:9080"   # APISIX proxy HTTP
+      - "9443:9443"   # APISIX proxy HTTPS
+    volumes:
+      - ./infra/apisix/config.yaml:/usr/local/apisix/conf/config.yaml:ro
+    depends_on:
+      - agent-service
+      - semantic-service
+      - auth-service
+      - session-service

@@ -1,0 +1,257 @@
+import { http, HttpResponse } from 'msw';
+import type {
+  LoginResponse,
+  User,
+  Session,
+  ChatMessage,
+} from '@/types/api';
+
+// ==================== Mock 数据 ====================
+
+const MOCK_USER: User = {
+  id: 'user-001',
+  username: 'admin',
+  display_name: '管理员',
+  role: 'admin',
+  tenant_id: 'tenant-001',
+  created_at: '2026-01-01T00:00:00+08:00',
+};
+
+const MOCK_SESSIONS: Session[] = [
+  {
+    id: 'session-001',
+    title: '上月营收分析',
+    created_at: '2026-05-20T10:00:00+08:00',
+    updated_at: '2026-05-27T14:30:00+08:00',
+    message_count: 12,
+    is_archived: false,
+  },
+  {
+    id: 'session-002',
+    title: '用户增长趋势',
+    created_at: '2026-05-25T09:00:00+08:00',
+    updated_at: '2026-05-27T11:00:00+08:00',
+    message_count: 8,
+    is_archived: false,
+  },
+  {
+    id: 'session-003',
+    title: '产品库存查询',
+    created_at: '2026-05-15T14:00:00+08:00',
+    updated_at: '2026-05-20T16:00:00+08:00',
+    message_count: 5,
+    is_archived: true,
+  },
+];
+
+const MOCK_MESSAGES: Record<string, ChatMessage[]> = {
+  'session-001': [
+    {
+      id: 'msg-001',
+      role: 'user',
+      content: '上个月的总营收是多少？',
+      created_at: '2026-05-27T14:30:00+08:00',
+    },
+    {
+      id: 'msg-002',
+      role: 'assistant',
+      content:
+        '根据查询结果，上个月（2026年4月）的总营收为 1,234,567 元，同比增长 12.5%。',
+      sql: 'SELECT SUM(amount) AS total_revenue FROM orders WHERE order_date >= \'2026-04-01\' AND order_date < \'2026-05-01\'',
+      sql_dialect: 'mysql',
+      sql_explanation:
+        '从 orders 表中汇总 2026 年 4 月所有订单的 amount 字段，得到总营收。',
+      chart_spec: {
+        chartType: 'bar',
+        xAxis: 'month',
+        yAxis: 'revenue',
+      },
+      freshness_note: '数据截至 2026-05-25 23:59',
+      data_cutoff: '2026-05-25T23:59:00+08:00',
+      total_rows: 15000,
+      has_more: false,
+      created_at: '2026-05-27T14:30:05+08:00',
+    },
+  ],
+  'session-002': [
+    {
+      id: 'msg-003',
+      role: 'user',
+      content: '最近 7 天的新增用户数趋势',
+      created_at: '2026-05-27T11:00:00+08:00',
+    },
+    {
+      id: 'msg-004',
+      role: 'assistant',
+      content:
+        '最近 7 天新增用户总计 2,340 人，日均新增 334 人。周末注册量明显高于工作日。',
+      sql: "SELECT DATE(created_at) AS date, COUNT(*) AS new_users FROM users WHERE created_at >= CURRENT_DATE - INTERVAL 7 DAY GROUP BY DATE(created_at) ORDER BY date",
+      sql_dialect: 'mysql',
+      sql_explanation:
+        '从 users 表中统计最近 7 天每天的新增用户数，按日期分组并排序。',
+      chart_spec: {
+        chartType: 'line',
+        xAxis: 'date',
+        yAxis: 'new_users',
+      },
+      freshness_note: '数据截至 2026-05-27 00:00',
+      total_rows: 7,
+      has_more: false,
+      created_at: '2026-05-27T11:00:05+08:00',
+    },
+  ],
+};
+
+// ==================== Handlers ====================
+
+export const handlers = [
+  // -------------------- 认证 --------------------
+
+  http.post('/api/v1/auth/login', async ({ request }) => {
+    const body = (await request.json()) as { username: string; password: string };
+
+    // Mock: 任意用户名密码均可登录
+    const loginResponse: LoginResponse = {
+      data: {
+        access_token: 'mock-access-token-' + Date.now(),
+        refresh_token: 'mock-refresh-token-' + Date.now(),
+        token_type: 'bearer',
+        expires_in: 3600,
+      },
+    };
+
+    return HttpResponse.json(loginResponse);
+  }),
+
+  http.post('/api/v1/auth/refresh', () => {
+    return HttpResponse.json({
+      data: {
+        access_token: 'mock-refreshed-token-' + Date.now(),
+        refresh_token: 'mock-refresh-token-' + Date.now(),
+        token_type: 'bearer',
+        expires_in: 3600,
+      },
+    });
+  }),
+
+  http.post('/api/v1/auth/logout', () => {
+    return HttpResponse.json({ data: { message: '已登出' } });
+  }),
+
+  http.get('/api/v1/auth/me', () => {
+    return HttpResponse.json({ data: MOCK_USER });
+  }),
+
+  // -------------------- 会话 --------------------
+
+  http.get('/api/v1/sessions', () => {
+    return HttpResponse.json({ data: MOCK_SESSIONS });
+  }),
+
+  http.post('/api/v1/sessions', async ({ request }) => {
+    const body = (await request.json()) as { title?: string } | null;
+    const newSession: Session = {
+      id: `session-${Date.now()}`,
+      title: body?.title ?? '新的对话',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      message_count: 0,
+      is_archived: false,
+    };
+    return HttpResponse.json({ data: newSession });
+  }),
+
+  http.get('/api/v1/sessions/:id', ({ params }) => {
+    const session = MOCK_SESSIONS.find((s) => s.id === params.id);
+    if (!session) {
+      return HttpResponse.json(
+        { error: { code: 'NOT_FOUND', message: '会话不存在' } },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json({ data: session });
+  }),
+
+  http.patch('/api/v1/sessions/:id', ({ params, request }) => {
+    const session = MOCK_SESSIONS.find((s) => s.id === params.id);
+    if (!session) {
+      return HttpResponse.json(
+        { error: { code: 'NOT_FOUND', message: '会话不存在' } },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json({
+      data: {
+        ...session,
+        updated_at: new Date().toISOString(),
+      },
+    });
+  }),
+
+  http.delete('/api/v1/sessions/:id', () => {
+    return HttpResponse.json({ data: { message: '已删除' } });
+  }),
+
+  // -------------------- 聊天 --------------------
+
+  http.get('/api/v1/sessions/:id/messages', ({ params }) => {
+    const messages = MOCK_MESSAGES[params.id as string] ?? [];
+    return HttpResponse.json({ data: messages });
+  }),
+
+  http.post('/api/v1/chat/message', async ({ request }) => {
+    const body = (await request.json()) as { content: string };
+
+    // Mock AI 回复
+    const aiResponse: ChatMessage = {
+      id: `msg-ai-${Date.now()}`,
+      role: 'assistant',
+      content: `收到您的问题："${body.content}"。这是一个 Mock 回复，后端服务就绪后将返回真实的 AI 查询结果。`,
+      sql: 'SELECT * FROM sample_table LIMIT 10',
+      sql_dialect: 'mysql',
+      sql_explanation: '这是一个示例 SQL 查询，从 sample_table 中取前 10 条记录。',
+      chart_spec: {
+        chartType: 'bar',
+        xAxis: 'category',
+        yAxis: 'value',
+      },
+      freshness_note: '数据截至 2026-05-27 00:00',
+      total_rows: 100,
+      has_more: false,
+      created_at: new Date().toISOString(),
+    };
+
+    return HttpResponse.json(
+      {
+        data: aiResponse,
+        trace_id: `mock-trace-${Date.now()}`,
+      },
+      // 模拟网络延迟
+      { delay: 800 },
+    );
+  }),
+
+  http.post('/api/v1/chat/execute-sql', async ({ request }) => {
+    const body = (await request.json()) as { edited_sql: string };
+
+    const aiResponse: ChatMessage = {
+      id: `msg-execute-${Date.now()}`,
+      role: 'assistant',
+      content: `已执行您编辑的 SQL：\n\`\`\`sql\n${body.edited_sql}\n\`\`\`\n\n查询完成，返回 Mock 结果。`,
+      sql: body.edited_sql,
+      sql_dialect: 'mysql',
+      sql_explanation: '用户编辑后重新执行的 SQL。',
+      total_rows: 50,
+      has_more: false,
+      created_at: new Date().toISOString(),
+    };
+
+    return HttpResponse.json(
+      {
+        data: aiResponse,
+        trace_id: `mock-trace-${Date.now()}`,
+      },
+      { delay: 500 },
+    );
+  }),
+];

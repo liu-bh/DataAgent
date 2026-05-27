@@ -1,0 +1,21 @@
+{
+  "product": "DataPilot",
+  "licensee": "Example Corp",
+  "license_key": "a1b2c3d4e5f6789012345678901234ab",
+  "issued_at": "2026-01-01T00:00:00+00:00",
+  "expires_at": "2027-01-01T00:00:00+00:00",
+  "allowed_ips": [
+    "10.0.0.0/8",
+    "172.16.0.0/12",
+    "192.168.0.0/16",
+    "127.0.0.1"
+  ],
+  "max_concurrent_users": 100,
+  "features": [
+    "nl2sql",
+    "semantic_model",
+    "data_export",
+    "python_sandbox"
+  ],
+  "signature": "<replace-with-hmac-sha256-signature>"
+}

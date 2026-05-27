@@ -50,7 +50,7 @@ logs/
 minio-data/
 
 # Docker
-docker-compose.override.yml
+# docker-compose.override.yml
 
 # Coverage
 htmlcov/
