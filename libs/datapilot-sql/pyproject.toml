@@ -1,0 +1,8 @@
+[project]
+name = "datapilot-sql"
+version = "0.1.0"
+description = "DataPilot SQL utilities: sqlglot AST wrapping, dialect adaptation, RBAC injection"
+requires-python = ">=3.11"
+dependencies = [
+    "sqlglot>=26.0",
+]

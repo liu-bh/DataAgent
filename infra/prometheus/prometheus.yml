@@ -1,0 +1,39 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "agent-service"
+    static_configs:
+      - targets: ["host.docker.internal:8000"]
+    metrics_path: "/metrics"
+
+  - job_name: "semantic-service"
+    static_configs:
+      - targets: ["host.docker.internal:8001"]
+    metrics_path: "/metrics"
+
+  - job_name: "sqlgen-service"
+    static_configs:
+      - targets: ["host.docker.internal:8002"]
+    metrics_path: "/metrics"
+
+  - job_name: "queryexec-service"
+    static_configs:
+      - targets: ["host.docker.internal:8003"]
+    metrics_path: "/metrics"
+
+  - job_name: "guardrail-service"
+    static_configs:
+      - targets: ["host.docker.internal:8005"]
+    metrics_path: "/metrics"
+
+  - job_name: "session-service"
+    static_configs:
+      - targets: ["host.docker.internal:8006"]
+    metrics_path: "/metrics"
+
+  - job_name: "auth-service"
+    static_configs:
+      - targets: ["host.docker.internal:8004"]
+    metrics_path: "/metrics"

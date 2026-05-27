@@ -1,0 +1,10 @@
+[project]
+name = "datapilot-prompt"
+version = "0.1.0"
+description = "DataPilot prompt management: versioning, A/B testing, token budget"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.9",
+    "sqlalchemy[asyncio]>=2.0",
+    "redis>=5.0",
+]

@@ -1,0 +1,74 @@
+[project]
+name = "datapilot-workspace"
+version = "0.1.0"
+description = "DataPilot - Enterprise Semantic Data Agent"
+requires-python = ">=3.11"
+
+[tool.uv.workspace]
+members = [
+    "libs/datapilot-common",
+    "libs/datapilot-license",
+    "libs/datapilot-llm",
+    "libs/datapilot-prompt",
+    "libs/datapilot-sql",
+    "libs/datapilot-proto",
+    "services/agent-service",
+    "services/semantic-service",
+    "services/sql-generator-service",
+    "services/query-executor-service",
+    "services/guardrail-service",
+    "services/session-service",
+    "services/auth-service",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "pytest-cov>=5.0",
+    "ruff>=0.8.0",
+    "mypy>=1.10",
+    "httpx>=0.27",       # TestClient for FastAPI
+    "pre-commit>=3.8",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "TCH",  # flake8-type-checking
+]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["datapilot_common", "datapilot_license", "datapilot_llm", "datapilot_prompt", "datapilot_sql", "datapilot_proto"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-v --tb=short"
+
+[tool.coverage.run]
+source = ["services", "libs"]
+omit = ["tests/*", "*/__init__.py"]

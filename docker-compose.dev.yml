@@ -1,0 +1,107 @@
+version: "3.8"
+
+services:
+  # ============================================
+  # PostgreSQL 16 + pgvector
+  # ============================================
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: datapilot-postgres
+    environment:
+      POSTGRES_USER: datapilot
+      POSTGRES_PASSWORD: datapilot
+      POSTGRES_DB: datapilot
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/scripts/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U datapilot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # Redis 7
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: datapilot-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # MinIO (S3 兼容对象存储)
+  # ============================================
+  minio:
+    image: minio/minio:latest
+    container_name: datapilot-minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"   # API
+      - "9001:9001"   # Console
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # Jaeger (OpenTelemetry 链路追踪)
+  # ============================================
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: datapilot-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: true
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "4318:4318"    # OTLP HTTP
+      - "4317:4317"    # OTLP gRPC
+
+  # ============================================
+  # Prometheus (监控指标采集)
+  # ============================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: datapilot-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  # ============================================
+  # Grafana (监控大盘)
+  # ============================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: datapilot-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  grafana_data:

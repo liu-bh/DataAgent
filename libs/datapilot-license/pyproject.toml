@@ -1,0 +1,10 @@
+[project]
+name = "datapilot-license"
+version = "0.1.0"
+description = "DataPilot product license validation: IP whitelist, expiry, HMAC signature"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "pydantic>=2.9",
+    "redis>=5.0",
+]

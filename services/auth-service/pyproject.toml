@@ -1,0 +1,13 @@
+[project]
+name = "datapilot-auth"
+version = "0.1.0"
+description = "DataPilot Auth Service: JWT, RBAC, user management"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "passlib[bcrypt]>=1.7",
+    "python-jose[cryptography]>=3.3",
+    "alembic>=1.14",
+    "datapilot-common",
+]

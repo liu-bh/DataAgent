@@ -1,0 +1,10 @@
+[project]
+name = "datapilot-proto"
+version = "0.1.0"
+description = "DataPilot gRPC protocol definitions"
+requires-python = ">=3.11"
+dependencies = [
+    "grpcio>=1.67",
+    "grpcio-tools>=1.67",
+    "betterproto>=2.0",
+]
