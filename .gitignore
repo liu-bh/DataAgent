@@ -1,0 +1,79 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+.uv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.desktop
+Desktop.ini
+
+# Environment
+.env
+.env.local
+.env.*.local
+*.env
+
+# Secrets
+*.pem
+*.key
+*.p12
+license.json
+LICENSE_SIGNING_KEY
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite3
+
+# MinIO data
+minio-data/
+
+# Docker
+docker-compose.override.yml
+
+# Coverage
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+test-results.xml
+.mypy_cache/
+.ruff_cache/
+
+# Node
+web/node_modules/
+web/.pnpm-store/
+web/dist/
+web/.tsbuildinfo
+
+# Claude Code local settings
+.claude/settings.local.json
+.claude/plans/
+
+# Temp
+*.tmp
+*.bak
+*.swp
+.temp/
+tmp/

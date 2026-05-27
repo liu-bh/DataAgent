@@ -1,0 +1,51 @@
+{
+  "extends": ["@commitlint/config-conventional"],
+  "rules": {
+    "type-enum": [
+      2,
+      "always",
+      [
+        "feat",
+        "fix",
+        "docs",
+        "refactor",
+        "test",
+        "chore",
+        "perf",
+        "ci",
+        "style",
+        "revert"
+      ]
+    ],
+    "scope-enum": [
+      2,
+      "always",
+      [
+        "agent",
+        "semantic",
+        "sqlgen",
+        "queryexec",
+        "guardrail",
+        "auth",
+        "session",
+        "license",
+        "llm",
+        "prompt",
+        "sql",
+        "common",
+        "proto",
+        "chat-ui",
+        "admin",
+        "web",
+        "deps",
+        "infra",
+        "ci"
+      ]
+    ],
+    "scope-case": [2, "always", "kebab-case"],
+    "subject-max-length": [2, "always", 100],
+    "subject-empty": [2, "never"],
+    "body-max-line-length": [2, "always", 200],
+    "footer-max-line-length": [2, "always", 200]
+  }
+}

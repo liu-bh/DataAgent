@@ -1,0 +1,88 @@
+# Pre-commit hooks 配置
+# 安装: pip install pre-commit && pre-commit install
+# 手动运行: pre-commit run --all-files
+
+default_stages: [commit, push]
+
+repos:
+  # ============================================
+  # Python 格式化 + Lint
+  # ============================================
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.0
+    hooks:
+      - id: ruff
+        args: [--fix]
+        types_or: [python, pyi]
+      - id: ruff-format
+        types_or: [python, pyi]
+
+  # ============================================
+  # Python import 排序
+  # ============================================
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        # 已由 ruff 管理，仅在 ruff 未覆盖时启用
+        exclude: ^(.*/migrations/)
+
+  # ============================================
+  # 通用文件检查
+  # ============================================
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: \.md$
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: [--unsafe]
+      - id: check-json
+        exclude: \.vscode/
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+      - id: detect-private-key
+      - id: no-commit-to-branch
+        args: [--branch, main, --branch, develop]
+      - id: check-case-conflict
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  # ============================================
+  # 提交信息规范 (commitlint 需配合 node)
+  # ============================================
+  - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
+    rev: v9.6.1
+    stages: [commit-msg]
+    hooks:
+      - id: commitlint
+        additional_dependencies: ['@commitlint/config-conventional']
+        pass_filenames: false
+
+  # ============================================
+  # 前端检查 (需要 node 环境)
+  # ============================================
+  - repo: local
+    hooks:
+      - id: eslint-frontend
+        name: ESLint (Frontend)
+        entry: bash -c 'cd web && pnpm lint --max-warnings=0 2>/dev/null || true'
+        language: system
+        files: ^(web/).*\.(ts|tsx)$
+        pass_filenames: false
+      - id: prettier-check
+        name: Prettier Check (Frontend)
+        entry: bash -c 'cd web && pnpm format:check 2>/dev/null || true'
+        language: system
+        files: ^(web/).*\.(ts|tsx|css|json|md)$
+        pass_filenames: false
+
+ci:
+  autofix_commit_msg: |
+    style: auto-fix by pre-commit hooks
+
+  autoupdate_commit_msg: |
+    chore: update pre-commit hooks
