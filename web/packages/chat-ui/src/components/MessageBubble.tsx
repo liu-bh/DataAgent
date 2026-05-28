@@ -1,9 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import type { ChatMessage } from '@/types/api';
 import SqlPanel from '@/components/SqlPanel';
 import SqlExplanation from '@/components/SqlExplanation';
 import ChartPanel from '@/components/ChartPanel';
 import DAGProgress from '@/components/DAGProgress';
+import PythonEditor from '@/components/PythonEditor';
+import OutputPanel from '@/components/OutputPanel';
 import { useDagStore } from '@/stores/dagStore';
 import { useChatStore } from '@/stores/chatStore';
 
@@ -23,6 +25,12 @@ export default function MessageBubble({
   // DAG 状态：从 dagStore 获取当前正在执行的 DAG
   const currentDag = useDagStore((s) => s.currentDag);
   const queryStatus = useChatStore((s) => s.queryStatus);
+
+  // Python 沙箱状态
+  const pythonResult = useDagStore((s) => s.pythonResult);
+  const pythonExecuting = useDagStore((s) => s.pythonExecuting);
+  const executePython = useDagStore((s) => s.executePython);
+  const clearPythonResult = useDagStore((s) => s.clearPythonResult);
 
   /** 是否应该显示 DAG 进度面板 */
   const showDAGProgress = useMemo(() => {
@@ -49,6 +57,14 @@ export default function MessageBubble({
   const handleEditSql = (editedSql: string) => {
     onEditSql?.(message.id, editedSql);
   };
+
+  /** 执行 Python 代码 */
+  const handleExecutePython = useCallback(
+    (code: string) => {
+      executePython(code, currentDag?.dag_id);
+    },
+    [executePython, currentDag],
+  );
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
@@ -93,6 +109,54 @@ export default function MessageBubble({
                   console.log('重新执行 SQL:', message.sql);
                 }}
               />
+            )}
+
+            {/* Python 代码编辑器与输出面板 */}
+            {(pythonExecuting || pythonResult) && (
+              <div className="space-y-2">
+                {/* Python 编辑器 */}
+                <PythonEditor
+                  onExecute={handleExecutePython}
+                  maxHeight="250px"
+                />
+
+                {/* 执行状态提示 */}
+                {pythonExecuting && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 text-xs text-gray-400">
+                    <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />
+                    Python 代码执行中...
+                  </div>
+                )}
+
+                {/* 执行结果 */}
+                {pythonResult && (
+                  <div className="flex items-center justify-between">
+                    <OutputPanel
+                      stdout={pythonResult.stdout}
+                      stderr={pythonResult.stderr}
+                      success={pythonResult.success}
+                      executionTimeMs={pythonResult.execution_time_ms}
+                      truncated={pythonResult.truncated}
+                      status={pythonResult.status}
+                      memoryUsedMb={pythonResult.memory_used_mb}
+                      securityIssues={pythonResult.security_issues}
+                      maxHeight="200px"
+                    />
+                  </div>
+                )}
+
+                {/* 清空 Python 结果按钮 */}
+                {pythonResult && (
+                  <div className="flex justify-end">
+                    <button
+                      onClick={clearPythonResult}
+                      className="text-[10px] text-gray-400 hover:text-gray-200 transition-colors"
+                    >
+                      清空 Python 结果
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
 
             {/* 查询结果表格（Phase1 简化版：最多 5 行） */}

@@ -19,6 +19,7 @@ members = [
     "datapilot-prompt",
     "datapilot-proto",
     "datapilot-queryexec",
+    "datapilot-sandbox",
     "datapilot-semantic",
     "datapilot-session",
     "datapilot-sql",
@@ -866,6 +867,17 @@ requires-dist = [
     { name = "structlog", specifier = ">=24.4" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
 ]
+
+[[package]]
+name = "datapilot-sandbox"
+version = "0.1.0"
+source = { editable = "libs/datapilot-sandbox" }
+dependencies = [
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "pydantic", specifier = ">=2.9" }]
 
 [[package]]
 name = "datapilot-semantic"

@@ -16,6 +16,7 @@ from datapilot_dag.executor.sql_executor import SQLTaskExecutor
 
 if TYPE_CHECKING:
     from datapilot_llm.router import LLMRouter
+    from datapilot_sandbox.executor import SandboxExecutor
 
 logger = structlog.get_logger(__name__)
 
@@ -99,18 +100,22 @@ class ExecutorRegistry:
         self,
         llm_router: LLMRouter | None = None,
         query_base_url: str = "http://localhost:8003",
+        sandbox_executor: SandboxExecutor | None = None,
     ) -> None:
         """注册所有默认执行器。
 
         Args:
             llm_router: LLMRouter 实例，可选。
             query_base_url: query-executor-service 基础 URL。
+            sandbox_executor: SandboxExecutor 实例，可选。
+                传入后 Python 执行器将使用沙箱运行代码。
         """
         self.register("sql", SQLTaskExecutor(base_url=query_base_url))
         self.register("llm", LLMTaskExecutor(llm_router=llm_router))
-        self.register("python", PythonTaskExecutor())
+        self.register("python", PythonTaskExecutor(sandbox_executor=sandbox_executor))
         logger.info(
             "default_executors_registered",
             query_base_url=query_base_url,
             llm_available=llm_router is not None,
+            sandbox_available=sandbox_executor is not None,
         )

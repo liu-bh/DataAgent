@@ -945,4 +945,97 @@ export const handlers = [
 
     return HttpResponse.json(historyItems);
   }),
+
+  // -------------------- Python 沙箱执行 --------------------
+
+  /** POST /api/v1/sandbox/execute -- 模拟 Python 代码执行 */
+  http.post('*/api/v1/sandbox/execute', async ({ request }) => {
+    const body = (await request.json()) as { code: string };
+    const code = body.code ?? '';
+
+    // 安全检查：禁止 import os / subprocess 等危险模块
+    const forbiddenPattern = /import\s+(os|subprocess|sys\s*\.\s*exit|shutil|signal|ctypes|multiprocessing)/i;
+    if (forbiddenPattern.test(code)) {
+      return HttpResponse.json({
+        result: {
+          success: false,
+          status: 'security_error',
+          return_code: 1,
+          stdout: '',
+          stderr: 'SecurityError: 不允许导入 os、subprocess 等系统模块',
+          execution_time_ms: 5,
+          output_bytes: 0,
+          cpu_time_ms: 3,
+          error: 'SecurityError: 不允许导入 os、subprocess 等系统模块',
+          truncated: false,
+          memory_used_mb: 12,
+          security_issues: [
+            { type: 'forbidden_import', message: '不允许导入 os、subprocess 等系统模块', snippet: code.match(forbiddenPattern)?.[0] },
+          ],
+        },
+        trace_id: `mock-trace-${Date.now()}`,
+      });
+    }
+
+    // 模拟 Python 输出：提取 print 语句的内容
+    const simulatePythonOutput = (pythonCode: string): string => {
+      const printRegex = /print\s*\((.*)\)/g;
+      const outputs: string[] = [];
+      let match: RegExpExecArray | null;
+
+      while ((match = printRegex.exec(pythonCode)) !== null) {
+        const arg = match[1].trim();
+        // 处理简单的 f-string 和字符串字面量
+        if (arg.startsWith('f"') || arg.startsWith("f'")) {
+          outputs.push(arg.slice(2, -1).replace(/\{.*?\}/g, 'mock'));
+        } else if (arg.startsWith('"') || arg.startsWith("'")) {
+          outputs.push(arg.slice(1, -1));
+        } else {
+          outputs.push(`<${arg}>`);
+        }
+      }
+
+      if (outputs.length === 0) {
+        return 'Python 代码执行完成（无输出）';
+      }
+      return outputs.join('\n');
+    };
+
+    const stdout = simulatePythonOutput(code);
+
+    return HttpResponse.json({
+      result: {
+        success: true,
+        status: 'success',
+        return_code: 0,
+        stdout,
+        stderr: '',
+        execution_time_ms: 150,
+        output_bytes: new TextEncoder().encode(stdout).length,
+        cpu_time_ms: 120,
+        error: '',
+        truncated: false,
+        memory_used_mb: 45,
+        security_issues: [],
+      },
+      trace_id: `mock-trace-${Date.now()}`,
+    });
+  }),
+
+  /** GET /api/v1/sandbox/info -- 沙箱运行信息 */
+  http.get('*/api/v1/sandbox/info', () => {
+    return HttpResponse.json({
+      type: 'local_process',
+      available: true,
+      python_version: '3.11.9',
+      installed_packages: ['pandas==2.2.1', 'numpy==1.26.4', 'scipy==1.13.0', 'scikit-learn==1.5.0', 'matplotlib==3.9.0', 'seaborn==0.13.2'],
+      max_concurrency: 5,
+      active_executions: 0,
+    });
+  }),
+
+  /** GET /api/v1/sandbox/health -- 沙箱健康检查 */
+  http.get('*/api/v1/sandbox/health', () => {
+    return HttpResponse.json({ available: true });
+  }),
 ];

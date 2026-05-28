@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import type { DAGExecutionStatus, DAGExecuteRequest } from '@/types/dag';
+import type { SandboxResult } from '@/types/sandbox';
 import { executeDAG as apiExecuteDAG, getDAGStatus } from '@/api/dag';
+import { executePythonCode } from '@/api/sandbox';
 
 /** 轮询间隔（毫秒） */
 const POLL_INTERVAL_MS = 1000;
@@ -21,6 +23,12 @@ interface DAGState {
   _pollTimerId: ReturnType<typeof setInterval> | null;
   /** 轮询次数计数 */
   _pollAttempts: number;
+  /** Python 沙箱代码 */
+  pythonCode: string;
+  /** Python 沙箱执行结果 */
+  pythonResult: SandboxResult | null;
+  /** Python 是否正在执行 */
+  pythonExecuting: boolean;
   /** 发起 DAG 执行并开始轮询状态 */
   executeDAG: (params: DAGExecuteRequest) => Promise<void>;
   /** 停止轮询 */
@@ -31,6 +39,10 @@ interface DAGState {
   clearCurrent: () => void;
   /** 重置错误 */
   clearError: () => void;
+  /** 执行 Python 代码（沙箱） */
+  executePython: (code: string, dagId?: string) => Promise<void>;
+  /** 清空 Python 执行结果 */
+  clearPythonResult: () => void;
 }
 
 export const useDagStore = create<DAGState>((set, get) => ({
@@ -40,6 +52,9 @@ export const useDagStore = create<DAGState>((set, get) => ({
   error: null,
   _pollTimerId: null,
   _pollAttempts: 0,
+  pythonCode: '',
+  pythonResult: null,
+  pythonExecuting: false,
 
   executeDAG: async (params: DAGExecuteRequest) => {
     // 先停止已有的轮询
@@ -162,5 +177,39 @@ export const useDagStore = create<DAGState>((set, get) => ({
 
   clearError: () => {
     set({ error: null });
+  },
+
+  executePython: async (code: string, _dagId?: string) => {
+    set({ pythonExecuting: true, pythonCode: code, pythonResult: null, error: null });
+
+    try {
+      const result = await executePythonCode({ code });
+      set({ pythonResult: result, pythonExecuting: false });
+    } catch (err) {
+      const errorMsg =
+        err instanceof Error ? err.message : 'Python 代码执行失败，请稍后重试';
+      set({
+        pythonExecuting: false,
+        error: errorMsg,
+        pythonResult: {
+          success: false,
+          status: 'system_error',
+          return_code: -1,
+          stdout: '',
+          stderr: errorMsg,
+          execution_time_ms: 0,
+          output_bytes: 0,
+          cpu_time_ms: 0,
+          error: errorMsg,
+          truncated: false,
+          memory_used_mb: 0,
+          security_issues: [],
+        },
+      });
+    }
+  },
+
+  clearPythonResult: () => {
+    set({ pythonResult: null, pythonCode: '', pythonExecuting: false });
   },
 }));
