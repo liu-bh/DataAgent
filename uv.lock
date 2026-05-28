@@ -11,6 +11,7 @@ resolution-markers = [
 members = [
     "datapilot-agent",
     "datapilot-auth",
+    "datapilot-chart",
     "datapilot-common",
     "datapilot-dag",
     "datapilot-guardrail",
@@ -687,6 +688,11 @@ requires-dist = [
     { name = "python-jose", extras = ["cryptography"], specifier = ">=3.3" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
 ]
+
+[[package]]
+name = "datapilot-chart"
+version = "0.1.0"
+source = { editable = "libs/datapilot-chart" }
 
 [[package]]
 name = "datapilot-common"

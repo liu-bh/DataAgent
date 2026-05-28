@@ -1039,8 +1039,6 @@ export const handlers = [
     return HttpResponse.json({ available: true });
   }),
 
-  // -------------------- RCA 根因分析 --------------------
-
   /** POST /api/v1/rca/analyze -- 返回模拟的 RCA 分析结果 */
   http.post('/api/v1/rca/analyze', async ({ request }) => {
     const body = (await request.json()) as {
@@ -1197,5 +1195,502 @@ export const handlers = [
         change_percent: 45.6,
       },
     ]);
+  }),
+
+  // -------------------- Dashboard --------------------
+
+  /** POST /api/v1/dashboard/create -- 创建 Dashboard */
+  http.post('/api/v1/dashboard/create', async ({ request }) => {
+    const body = (await request.json()) as { title: string; description?: string };
+    const newDashboard = {
+      dashboard_id: `dashboard-${Date.now()}`,
+      title: body.title ?? '新建看板',
+      description: body.description ?? '',
+      panels: [
+        {
+          panel_id: `panel-${Date.now()}-1`,
+          title: '销售额趋势',
+          panel_type: 'chart' as const,
+          width: 8,
+          height: 300,
+          chart_spec: {
+            tooltip: { trigger: 'axis' },
+            xAxis: { type: 'category', data: ['1月', '2月', '3月', '4月', '5月', '6月'] },
+            yAxis: { type: 'value' },
+            series: [{ name: '销售额', type: 'line', data: [82000, 93000, 90000, 93400, 129000, 133000], smooth: true }],
+            grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+          },
+          position: { row: 1, col: 1 },
+        },
+        {
+          panel_id: `panel-${Date.now()}-2`,
+          title: '总订单量',
+          panel_type: 'metric' as const,
+          width: 4,
+          height: 300,
+          metric_config: { metric: 'order_count', label: '总订单量', unit: '单', trend: 'up', value: 28456, change_percent: 12.5 },
+          position: { row: 1, col: 9 },
+        },
+        {
+          panel_id: `panel-${Date.now()}-3`,
+          title: '品类分布',
+          panel_type: 'chart' as const,
+          width: 6,
+          height: 280,
+          chart_spec: {
+            tooltip: { trigger: 'item' },
+            legend: { orient: 'vertical', left: 'left', textStyle: { color: '#9ca3af' } },
+            series: [
+              {
+                name: '品类分布',
+                type: 'pie',
+                radius: '50%',
+                data: [
+                  { value: 4520, name: '电子产品' },
+                  { value: 3210, name: '服装鞋帽' },
+                  { value: 2780, name: '食品饮料' },
+                  { value: 1950, name: '家居用品' },
+                  { value: 1640, name: '美妆个护' },
+                ],
+              },
+            ],
+          },
+          position: { row: 2, col: 1 },
+        },
+        {
+          panel_id: `panel-${Date.now()}-4`,
+          title: '地区销售排行',
+          panel_type: 'table' as const,
+          width: 6,
+          height: 280,
+          chart_spec: {
+            columns: ['地区', '销售额', '订单量', '客单价'],
+            rows: [
+              { '地区': '华东', '销售额': '456,789', '订单量': '1,234', '客单价': '370.2' },
+              { '地区': '华南', '销售额': '389,013', '订单量': '987', '客单价': '394.1' },
+              { '地区': '华北', '销售额': '312,457', '订单量': '856', '客单价': '365.0' },
+              { '地区': '华中', '销售额': '234,567', '订单量': '678', '客单价': '346.0' },
+              { '地区': '西南', '销售额': '178,901', '订单量': '456', '客单价': '392.3' },
+            ],
+          },
+          position: { row: 2, col: 7 },
+        },
+        {
+          panel_id: `panel-${Date.now()}-5`,
+          title: '本月营收',
+          panel_type: 'metric' as const,
+          width: 4,
+          height: 200,
+          metric_config: { metric: 'revenue', label: '本月营收', unit: '元', trend: 'up', value: 1571727, change_percent: 8.3 },
+          position: { row: 3, col: 1 },
+        },
+        {
+          panel_id: `panel-${Date.now()}-6`,
+          title: '客单价',
+          panel_type: 'metric' as const,
+          width: 4,
+          height: 200,
+          metric_config: { metric: 'avg_order', label: '客单价', unit: '元', trend: 'down', value: 552.4, change_percent: -2.1 },
+          position: { row: 3, col: 5 },
+        },
+        {
+          panel_id: `panel-${Date.now()}-7`,
+          title: '数据说明',
+          panel_type: 'text' as const,
+          width: 4,
+          height: 200,
+          content: '本看板展示核心业务指标概览，数据每日 00:00 自动更新。如需了解更多维度分析，请在对话中提问。',
+          position: { row: 3, col: 9 },
+        },
+      ],
+      filters: [
+        { filter_id: 'f-1', field: 'date_range', label: '时间范围', filter_type: 'time_range' as const, options: [] },
+        { filter_id: 'f-2', field: 'region', label: '地区', filter_type: 'select' as const, options: ['华东', '华南', '华北', '华中', '西南'], default_value: '' },
+        { filter_id: 'f-3', field: 'category', label: '品类', filter_type: 'multi_select' as const, options: ['电子产品', '服装鞋帽', '食品饮料', '家居用品', '美妆个护'] },
+      ],
+      columns: 12,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    return HttpResponse.json(newDashboard, { status: 201 });
+  }),
+
+  /** GET /api/v1/dashboard/list -- 返回 Dashboard 列表 */
+  http.get('/api/v1/dashboard/list', () => {
+    return HttpResponse.json([
+      {
+        dashboard_id: 'dashboard-001',
+        title: '电商核心指标看板',
+        description: '电商核心业务指标一览，涵盖营收、订单、用户增长等关键数据',
+        panels: [],
+        filters: [],
+        columns: 12,
+        created_at: '2026-05-01T10:00:00+08:00',
+        updated_at: '2026-05-28T08:00:00+08:00',
+      },
+      {
+        dashboard_id: 'dashboard-002',
+        title: '用户增长分析',
+        description: '用户注册、活跃、留存趋势分析',
+        panels: [],
+        filters: [],
+        columns: 12,
+        created_at: '2026-05-10T14:00:00+08:00',
+        updated_at: '2026-05-27T16:00:00+08:00',
+      },
+      {
+        dashboard_id: 'dashboard-003',
+        title: '供应链效率监控',
+        description: '物流配送时效、库存周转率等供应链关键指标',
+        panels: [],
+        filters: [],
+        columns: 12,
+        created_at: '2026-05-15T09:00:00+08:00',
+        updated_at: '2026-05-26T12:00:00+08:00',
+      },
+    ]);
+  }),
+
+  /** GET /api/v1/dashboard/:id -- 返回模拟 Dashboard 详情 */
+  http.get('/api/v1/dashboard/:id', ({ params }) => {
+    const id = params.id as string;
+    if (id === 'dashboard-001') {
+      return HttpResponse.json({
+        dashboard_id: 'dashboard-001',
+        title: '电商核心指标看板',
+        description: '电商核心业务指标一览，涵盖营收、订单、用户增长等关键数据',
+        panels: [
+          {
+            panel_id: 'p-001-1',
+            title: '月度销售额趋势',
+            panel_type: 'chart',
+            width: 8,
+            height: 300,
+            chart_spec: {
+              tooltip: { trigger: 'axis' },
+              xAxis: { type: 'category', data: ['1月', '2月', '3月', '4月', '5月', '6月'] },
+              yAxis: { type: 'value' },
+              series: [
+                { name: '销售额', type: 'line', data: [820000, 930000, 900000, 1234567, 1156789, 1350000], smooth: true, areaStyle: { opacity: 0.1 } },
+              ],
+              grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+            },
+            position: { row: 1, col: 1 },
+          },
+          {
+            panel_id: 'p-001-2',
+            title: '本月订单量',
+            panel_type: 'metric',
+            width: 4,
+            height: 300,
+            metric_config: { metric: 'order_count', label: '本月订单量', unit: '单', trend: 'up', value: 28456, change_percent: 12.5 },
+            position: { row: 1, col: 9 },
+          },
+          {
+            panel_id: 'p-001-3',
+            title: '品类销售分布',
+            panel_type: 'chart',
+            width: 6,
+            height: 280,
+            chart_spec: {
+              tooltip: { trigger: 'item' },
+              legend: { orient: 'vertical', left: 'left', textStyle: { color: '#9ca3af' } },
+              series: [
+                { name: '品类分布', type: 'pie', radius: '50%', data: [
+                  { value: 4520, name: '电子产品' },
+                  { value: 3210, name: '服装鞋帽' },
+                  { value: 2780, name: '食品饮料' },
+                  { value: 1950, name: '家居用品' },
+                  { value: 1640, name: '美妆个护' },
+                ] },
+              ],
+            },
+            position: { row: 2, col: 1 },
+          },
+          {
+            panel_id: 'p-001-4',
+            title: '地区销售排行',
+            panel_type: 'table',
+            width: 6,
+            height: 280,
+            chart_spec: {
+              columns: ['地区', '销售额', '订单量', '客单价'],
+              rows: [
+                { '地区': '华东', '销售额': '456,789', '订单量': '1,234', '客单价': '370.2' },
+                { '地区': '华南', '销售额': '389,013', '订单量': '987', '客单价': '394.1' },
+                { '地区': '华北', '销售额': '312,457', '订单量': '856', '客单价': '365.0' },
+                { '地区': '华中', '销售额': '234,567', '订单量': '678', '客单价': '346.0' },
+                { '地区': '西南', '销售额': '178,901', '订单量': '456', '客单价': '392.3' },
+              ],
+            },
+            position: { row: 2, col: 7 },
+          },
+          {
+            panel_id: 'p-001-5',
+            title: '本月营收',
+            panel_type: 'metric',
+            width: 4,
+            height: 200,
+            metric_config: { metric: 'revenue', label: '本月营收', unit: '元', trend: 'up', value: 1571727, change_percent: 8.3 },
+            position: { row: 3, col: 1 },
+          },
+          {
+            panel_id: 'p-001-6',
+            title: '平均客单价',
+            panel_type: 'metric',
+            width: 4,
+            height: 200,
+            metric_config: { metric: 'avg_order', label: '平均客单价', unit: '元', trend: 'down', value: 552.4, change_percent: -2.1 },
+            position: { row: 3, col: 5 },
+          },
+          {
+            panel_id: 'p-001-7',
+            title: '数据说明',
+            panel_type: 'text',
+            width: 4,
+            height: 200,
+            content: '本看板展示核心业务指标概览，数据每日 00:00 自动更新。如需了解更多维度分析，请在对话中提问。',
+            position: { row: 3, col: 9 },
+          },
+        ],
+        filters: [
+          { filter_id: 'f-1', field: 'date_range', label: '时间范围', filter_type: 'time_range', options: [] },
+          { filter_id: 'f-2', field: 'region', label: '地区', filter_type: 'select', options: ['华东', '华南', '华北', '华中', '西南'], default_value: '' },
+          { filter_id: 'f-3', field: 'category', label: '品类', filter_type: 'multi_select', options: ['电子产品', '服装鞋帽', '食品饮料', '家居用品', '美妆个护'] },
+        ],
+        columns: 12,
+        created_at: '2026-05-01T10:00:00+08:00',
+        updated_at: '2026-05-28T08:00:00+08:00',
+      });
+    }
+    // 其他 ID 返回通用模拟数据
+    return HttpResponse.json({
+      dashboard_id: id,
+      title: '数据看板',
+      description: '模拟数据看板',
+      panels: [
+        {
+          panel_id: `panel-${id}-1`,
+          title: '示例图表',
+          panel_type: 'chart',
+          width: 12,
+          height: 300,
+          chart_spec: {
+            tooltip: { trigger: 'axis' },
+            xAxis: { type: 'category', data: ['周一', '周二', '周三', '周四', '周五'] },
+            yAxis: { type: 'value' },
+            series: [{ name: '访问量', type: 'bar', data: [120, 200, 150, 80, 230] }],
+          },
+          position: { row: 1, col: 1 },
+        },
+      ],
+      filters: [],
+      columns: 12,
+      created_at: '2026-05-20T10:00:00+08:00',
+      updated_at: '2026-05-28T08:00:00+08:00',
+    });
+  }),
+
+  /** DELETE /api/v1/dashboard/:id -- 删除 Dashboard */
+  http.delete('/api/v1/dashboard/:id', () => {
+    return HttpResponse.json({ data: { message: '已删除' } });
+  }),
+
+  /** POST /api/v1/chart/recommend -- 图表类型推荐 */
+  http.post('/api/v1/chart/recommend', async ({ request }) => {
+    const body = (await request.json()) as { user_question?: string };
+    const question = String(body.user_question ?? '').toLowerCase();
+
+    // 根据问题关键词推荐图表类型
+    if (/趋势|每天|每日|周|月|时间/.test(question)) {
+      return HttpResponse.json({
+        recommended_types: [
+          { type: 'line', confidence: 0.92, title: '折线图', description: '适合展示时间序列趋势变化' },
+          { type: 'bar', confidence: 0.85, title: '柱状图', description: '适合对比不同时间点的数值' },
+          { type: 'area', confidence: 0.75, title: '面积图', description: '强调趋势变化和累计效果' },
+        ],
+        x_field: 'date',
+        y_fields: ['value'],
+      });
+    }
+    if (/占比|比例|分布|分类/.test(question)) {
+      return HttpResponse.json({
+        recommended_types: [
+          { type: 'pie', confidence: 0.95, title: '饼图', description: '适合展示各部分占比关系' },
+          { type: 'bar', confidence: 0.80, title: '柱状图', description: '适合对比各类别的数值大小' },
+        ],
+        x_field: 'category',
+        y_fields: ['count'],
+      });
+    }
+    return HttpResponse.json({
+      recommended_types: [
+        { type: 'bar', confidence: 0.88, title: '柱状图', description: '适合对比不同维度的数值' },
+        { type: 'line', confidence: 0.75, title: '折线图', description: '适合展示数据变化趋势' },
+        { type: 'table', confidence: 0.70, title: '表格', description: '适合展示详细数据明细' },
+      ],
+      x_field: 'dimension',
+      y_fields: ['value'],
+    });
+  }),
+
+  /** POST /api/v1/chart/render -- 返回模拟 ECharts 配置 */
+  http.post('/api/v1/chart/render', async ({ request }) => {
+    const body = (await request.json()) as {
+      chart_type?: string;
+      columns?: string[];
+      data?: Record<string, unknown>[];
+      user_question?: string;
+    };
+    const chartType = body.chart_type ?? 'bar';
+    const columns = body.columns ?? ['x', 'y'];
+    const data = body.data ?? [];
+
+    // 如果请求已携带数据，根据 chart_type 构建 ECharts 配置
+    if (data.length > 0) {
+      const xField = columns[0];
+      const yFields = columns.slice(1);
+
+      let option: Record<string, unknown>;
+      if (chartType === 'pie') {
+        option = {
+          tooltip: { trigger: 'item' },
+          legend: { orient: 'vertical', left: 'left', textStyle: { color: '#9ca3af' } },
+          series: [
+            {
+              name: yFields[0] ?? 'value',
+              type: 'pie',
+              radius: '50%',
+              data: data.map((row) => ({
+                value: row[yFields[0] ?? 'value'],
+                name: row[xField],
+              })),
+            },
+          ],
+        };
+      } else if (chartType === 'line') {
+        option = {
+          tooltip: { trigger: 'axis' },
+          legend: { data: yFields, textStyle: { color: '#9ca3af' } },
+          xAxis: { type: 'category', data: data.map((row) => row[xField]) },
+          yAxis: { type: 'value' },
+          series: yFields.map((field) => ({
+            name: field,
+            type: 'line',
+            smooth: true,
+            data: data.map((row) => row[field]),
+          })),
+          grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+        };
+      } else if (chartType === 'area') {
+        option = {
+          tooltip: { trigger: 'axis' },
+          legend: { data: yFields, textStyle: { color: '#9ca3af' } },
+          xAxis: { type: 'category', data: data.map((row) => row[xField]) },
+          yAxis: { type: 'value' },
+          series: yFields.map((field) => ({
+            name: field,
+            type: 'line',
+            smooth: true,
+            areaStyle: { opacity: 0.15 },
+            data: data.map((row) => row[field]),
+          })),
+          grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+        };
+      } else {
+        // 默认柱状图
+        option = {
+          tooltip: { trigger: 'axis' },
+          legend: { data: yFields, textStyle: { color: '#9ca3af' } },
+          xAxis: { type: 'category', data: data.map((row) => row[xField]) },
+          yAxis: { type: 'value' },
+          series: yFields.map((field) => ({
+            name: field,
+            type: 'bar',
+            data: data.map((row) => row[field]),
+          })),
+          grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+        };
+      }
+      return HttpResponse.json({ option }, { delay: 300 });
+    }
+
+    // 无数据时根据 user_question 关键词返回示例 ECharts 配置
+    const question = String(body.user_question ?? '').toLowerCase();
+
+    if (/趋势|每天|每日|周|月/.test(question)) {
+      return HttpResponse.json(
+        {
+          option: {
+            tooltip: { trigger: 'axis' },
+            legend: { data: ['新增用户', '营收'], textStyle: { color: '#9ca3af' } },
+            xAxis: {
+              type: 'category',
+              data: ['05-21', '05-22', '05-23', '05-24', '05-25', '05-26', '05-27'],
+            },
+            yAxis: { type: 'value' },
+            series: [
+              { name: '新增用户', type: 'line', smooth: true, data: [280, 310, 295, 420, 385, 450, 510] },
+              { name: '营收', type: 'line', smooth: true, areaStyle: { opacity: 0.1 }, data: [152340, 167890, 148920, 215600, 198400, 234500, 267800] },
+            ],
+            grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+          },
+        },
+        { delay: 500 },
+      );
+    }
+
+    if (/占比|比例|分布|分类/.test(question)) {
+      return HttpResponse.json(
+        {
+          option: {
+            tooltip: { trigger: 'item' },
+            legend: { orient: 'vertical', left: 'left', textStyle: { color: '#9ca3af' } },
+            series: [
+              {
+                name: '品类分布',
+                type: 'pie',
+                radius: ['40%', '70%'],
+                avoidLabelOverlap: true,
+                itemStyle: { borderRadius: 4, borderColor: '#1f2937', borderWidth: 2 },
+                label: { show: true, color: '#9ca3af' },
+                data: [
+                  { value: 4520, name: '电子产品' },
+                  { value: 3210, name: '服装鞋帽' },
+                  { value: 2780, name: '食品饮料' },
+                  { value: 1950, name: '家居用品' },
+                  { value: 1640, name: '美妆个护' },
+                ],
+              },
+            ],
+          },
+        },
+        { delay: 500 },
+      );
+    }
+
+    // 默认柱状图
+    return HttpResponse.json(
+      {
+        option: {
+          tooltip: { trigger: 'axis' },
+          legend: { data: ['销售额', '订单量'], textStyle: { color: '#9ca3af' } },
+          xAxis: {
+            type: 'category',
+            data: ['华东', '华南', '华北', '华中', '西南'],
+          },
+          yAxis: [
+            { type: 'value', name: '销售额(元)', textStyle: { color: '#9ca3af' } },
+            { type: 'value', name: '订单量', textStyle: { color: '#9ca3af' } },
+          ],
+          series: [
+            { name: '销售额', type: 'bar', data: [456789, 389013, 312457, 234567, 178901] },
+            { name: '订单量', type: 'bar', yAxisIndex: 1, data: [1234, 987, 856, 678, 456] },
+          ],
+          grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+        },
+      },
+      { delay: 500 },
+    );
   }),
 ];

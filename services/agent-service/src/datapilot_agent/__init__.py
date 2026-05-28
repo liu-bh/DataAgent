@@ -7,8 +7,10 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from datapilot_agent.api.routes.chart import router as chart_router
 from datapilot_agent.api.routes.chat import router as chat_router
 from datapilot_agent.api.routes.dag import router as dag_router
+from datapilot_agent.api.routes.dashboard import router as dashboard_router
 from datapilot_agent.api.routes.rca import router as rca_router
 from datapilot_agent.api.routes.sessions import router as sessions_proxy_router
 from datapilot_agent.api.routes.tools import router as tools_router
@@ -34,6 +36,8 @@ app.include_router(sessions_proxy_router)
 app.include_router(dag_router)
 app.include_router(rca_router)
 app.include_router(tools_router)
+app.include_router(chart_router)
+app.include_router(dashboard_router)
 
 
 @app.get("/health")
