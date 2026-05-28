@@ -827,6 +827,9 @@ dependencies = [
     { name = "datapilot-common" },
     { name = "fastapi" },
     { name = "minio" },
+    { name = "redis" },
+    { name = "sqlglot" },
+    { name = "structlog" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -838,6 +841,9 @@ requires-dist = [
     { name = "datapilot-common", editable = "libs/datapilot-common" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "minio", specifier = ">=7.2" },
+    { name = "redis", specifier = ">=5.0" },
+    { name = "sqlglot", specifier = ">=26.0" },
+    { name = "structlog", specifier = ">=24.4" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
 ]
 
