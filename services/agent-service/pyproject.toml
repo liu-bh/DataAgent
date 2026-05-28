@@ -9,4 +9,6 @@ dependencies = [
     "sse-starlette>=2.0",
     "datapilot-common",
     "datapilot-license",
+    "datapilot-dag",
+    "httpx>=0.27",
 ]

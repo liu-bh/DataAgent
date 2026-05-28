@@ -7,6 +7,7 @@ import type {
   QueryHistoryItem,
   StarredQuery,
 } from '@/types/api';
+import type { DAGExecutionStatus } from '@/types/dag';
 
 // ==================== Mock 数据 ====================
 
@@ -161,6 +162,9 @@ const MOCK_STARRED_QUERIES: StarredQuery[] = [
 ];
 
 // ==================== Handlers ====================
+
+/** 模拟轮询进度的计数器（按 dagId 记录轮询次数） */
+const _dagPollCounters: Record<string, number> = {};
 
 export const handlers = [
   // -------------------- 认证 --------------------
@@ -736,5 +740,209 @@ export const handlers = [
       MOCK_STARRED_QUERIES.splice(idx, 1);
     }
     return HttpResponse.json({ status: 'ok' }, { delay: 200 });
+  }),
+
+  // -------------------- DAG 执行进度 --------------------
+
+  /** POST /api/v1/dag/execute -- 返回模拟的 DAG 执行结果 */
+  http.post('/api/v1/dag/execute', async () => {
+    const dagId = `dag-${Date.now()}`;
+
+    // 初始化轮询计数器
+    _dagPollCounters[dagId] = 0;
+
+    const executeResponse = {
+      dag_id: dagId,
+      status: 'running' as const,
+      task_results: {
+        intent_route: { status: 'running' as const, execution_time_ms: 0 },
+        intent_parse: { status: 'pending' as const, execution_time_ms: 0 },
+        schema_link: { status: 'pending' as const, execution_time_ms: 0 },
+        prompt_build: { status: 'pending' as const, execution_time_ms: 0 },
+        sql_generate: { status: 'pending' as const, execution_time_ms: 0 },
+        sql_validate: { status: 'pending' as const, execution_time_ms: 0 },
+        sql_explain: { status: 'pending' as const, execution_time_ms: 0 },
+      },
+      total_time_ms: 0,
+    };
+
+    return HttpResponse.json(executeResponse, { delay: 300 });
+  }),
+
+  /** GET /api/v1/dag/:dagId/status -- 返回模拟的执行状态（轮询时模拟进度） */
+  http.get('/api/v1/dag/:dagId/status', ({ params }) => {
+    const dagId = params.dagId as string;
+    const count = (_dagPollCounters[dagId] ?? 0) + 1;
+    _dagPollCounters[dagId] = count;
+
+    // 根据轮询次数模拟进度推进
+    // 第 1-2 次: 意图路由/解析
+    // 第 3-4 次: Schema Linking
+    // 第 5-7 次: Prompt 组装 + SQL 生成
+    // 第 8 次: SQL 验证
+    // 第 9 次: SQL 解释
+    // 第 10 次: 完成
+
+    const makeNode = (
+      nodeId: string,
+      label: string,
+      taskType: 'sql' | 'llm' | 'search' | 'action' | 'python',
+      level: number,
+      status: 'pending' | 'running' | 'completed' | 'failed' | 'skipped' | 'cancelled',
+      deps: string[],
+      execTime?: number,
+      error?: string,
+    ) => ({
+      node_id: nodeId,
+      label,
+      task_type: taskType,
+      status,
+      execution_time_ms: execTime,
+      error,
+      level,
+      dependencies: deps,
+    });
+
+    const buildNodes = () => {
+      const nodes = [];
+
+      // Level 0: 意图路由
+      if (count >= 1) {
+        const intentRouteStatus = count >= 3 ? 'completed' : 'running';
+        nodes.push(
+          makeNode('intent_route', '意图路由', 'llm', 0, intentRouteStatus, [], count >= 3 ? 420 : undefined),
+        );
+      } else {
+        nodes.push(makeNode('intent_route', '意图路由', 'llm', 0, 'running', []));
+      }
+
+      // Level 1: 意图解析
+      if (count >= 2) {
+        const intentParseStatus = count >= 3 ? 'completed' : 'running';
+        nodes.push(
+          makeNode('intent_parse', '意图解析', 'llm', 1, intentParseStatus, ['intent_route'], count >= 3 ? 680 : undefined),
+        );
+      } else {
+        nodes.push(makeNode('intent_parse', '意图解析', 'llm', 1, 'pending', ['intent_route']));
+      }
+
+      // Level 2: Schema Linking
+      if (count >= 3) {
+        const schemaLinkStatus = count >= 5 ? 'completed' : 'running';
+        nodes.push(
+          makeNode('schema_link', 'Schema Linking', 'llm', 2, schemaLinkStatus, ['intent_parse'], count >= 5 ? 1250 : undefined),
+        );
+      } else {
+        nodes.push(makeNode('schema_link', 'Schema Linking', 'llm', 2, 'pending', ['intent_parse']));
+      }
+
+      // Level 3: Prompt 组装
+      if (count >= 5) {
+        const promptBuildStatus = count >= 6 ? 'completed' : 'running';
+        nodes.push(
+          makeNode('prompt_build', 'Prompt 组装', 'llm', 3, promptBuildStatus, ['schema_link'], count >= 6 ? 320 : undefined),
+        );
+      } else {
+        nodes.push(makeNode('prompt_build', 'Prompt 组装', 'llm', 3, 'pending', ['schema_link']));
+      }
+
+      // Level 4: SQL 生成
+      if (count >= 6) {
+        const sqlGenStatus = count >= 8 ? 'completed' : 'running';
+        nodes.push(
+          makeNode('sql_generate', 'SQL 生成', 'llm', 4, sqlGenStatus, ['prompt_build'], count >= 8 ? 2340 : undefined),
+        );
+      } else {
+        nodes.push(makeNode('sql_generate', 'SQL 生成', 'llm', 4, 'pending', ['prompt_build']));
+      }
+
+      // Level 5: SQL 验证
+      if (count >= 8) {
+        const sqlValidateStatus = count >= 9 ? 'completed' : 'running';
+        nodes.push(
+          makeNode('sql_validate', 'SQL 验证', 'sql', 5, sqlValidateStatus, ['sql_generate'], count >= 9 ? 180 : undefined),
+        );
+      } else {
+        nodes.push(makeNode('sql_validate', 'SQL 验证', 'sql', 5, 'pending', ['sql_generate']));
+      }
+
+      // Level 6: SQL 解释
+      if (count >= 9) {
+        const sqlExplainStatus = count >= 10 ? 'completed' : 'running';
+        nodes.push(
+          makeNode('sql_explain', 'SQL 解释', 'llm', 6, sqlExplainStatus, ['sql_validate'], count >= 10 ? 560 : undefined),
+        );
+      } else {
+        nodes.push(makeNode('sql_explain', 'SQL 解释', 'llm', 6, 'pending', ['sql_validate']));
+      }
+
+      return nodes;
+    };
+
+    const isCompleted = count >= 10;
+    const currentLevel = isCompleted ? -1 : Math.min(count, 6);
+
+    const dagStatus: DAGExecutionStatus = {
+      dag_id: dagId,
+      status: isCompleted ? 'completed' : 'running',
+      nodes: buildNodes(),
+      total_time_ms: isCompleted ? 5750 : count * 580,
+      current_level: currentLevel,
+    };
+
+    return HttpResponse.json(dagStatus, { delay: 200 });
+  }),
+
+  /** GET /api/v1/dag/history -- 返回模拟的历史记录 */
+  http.get('/api/v1/dag/history', () => {
+    const historyItems: DAGExecutionStatus[] = [
+      {
+        dag_id: 'dag-history-001',
+        status: 'completed',
+        current_level: -1,
+        total_time_ms: 4230,
+        nodes: [
+          { node_id: 'intent_route', label: '意图路由', task_type: 'llm', status: 'completed', execution_time_ms: 380, level: 0, dependencies: [] },
+          { node_id: 'intent_parse', label: '意图解析', task_type: 'llm', status: 'completed', execution_time_ms: 620, level: 1, dependencies: ['intent_route'] },
+          { node_id: 'schema_link', label: 'Schema Linking', task_type: 'llm', status: 'completed', execution_time_ms: 1100, level: 2, dependencies: ['intent_parse'] },
+          { node_id: 'prompt_build', label: 'Prompt 组装', task_type: 'llm', status: 'completed', execution_time_ms: 290, level: 3, dependencies: ['schema_link'] },
+          { node_id: 'sql_generate', label: 'SQL 生成', task_type: 'llm', status: 'completed', execution_time_ms: 1420, level: 4, dependencies: ['prompt_build'] },
+          { node_id: 'sql_validate', label: 'SQL 验证', task_type: 'sql', status: 'completed', execution_time_ms: 150, level: 5, dependencies: ['sql_generate'] },
+          { node_id: 'sql_explain', label: 'SQL 解释', task_type: 'llm', status: 'completed', execution_time_ms: 270, level: 6, dependencies: ['sql_validate'] },
+        ],
+      },
+      {
+        dag_id: 'dag-history-002',
+        status: 'failed',
+        current_level: 4,
+        total_time_ms: 3100,
+        error: 'SQL 生成失败：未找到匹配的语义模型',
+        nodes: [
+          { node_id: 'intent_route', label: '意图路由', task_type: 'llm', status: 'completed', execution_time_ms: 350, level: 0, dependencies: [] },
+          { node_id: 'intent_parse', label: '意图解析', task_type: 'llm', status: 'completed', execution_time_ms: 580, level: 1, dependencies: ['intent_route'] },
+          { node_id: 'schema_link', label: 'Schema Linking', task_type: 'llm', status: 'completed', execution_time_ms: 950, level: 2, dependencies: ['intent_parse'] },
+          { node_id: 'prompt_build', label: 'Prompt 组装', task_type: 'llm', status: 'completed', execution_time_ms: 310, level: 3, dependencies: ['schema_link'] },
+          { node_id: 'sql_generate', label: 'SQL 生成', task_type: 'llm', status: 'failed', execution_time_ms: 910, error: '未找到匹配的语义模型', level: 4, dependencies: ['prompt_build'] },
+        ],
+      },
+      {
+        dag_id: 'dag-history-003',
+        status: 'completed',
+        current_level: -1,
+        total_time_ms: 5890,
+        nodes: [
+          { node_id: 'intent_route', label: '意图路由', task_type: 'llm', status: 'completed', execution_time_ms: 400, level: 0, dependencies: [] },
+          { node_id: 'intent_parse', label: '意图解析', task_type: 'llm', status: 'completed', execution_time_ms: 700, level: 1, dependencies: ['intent_route'] },
+          { node_id: 'schema_link', label: 'Schema Linking', task_type: 'llm', status: 'completed', execution_time_ms: 1300, level: 2, dependencies: ['intent_parse'] },
+          { node_id: 'prompt_build', label: 'Prompt 组装', task_type: 'llm', status: 'completed', execution_time_ms: 340, level: 3, dependencies: ['schema_link'] },
+          { node_id: 'sql_generate', label: 'SQL 生成', task_type: 'llm', status: 'completed', execution_time_ms: 2100, level: 4, dependencies: ['prompt_build'] },
+          { node_id: 'sql_validate', label: 'SQL 验证', task_type: 'sql', status: 'completed', execution_time_ms: 200, level: 5, dependencies: ['sql_generate'] },
+          { node_id: 'sql_correct', label: 'SQL 纠错', task_type: 'llm', status: 'completed', execution_time_ms: 650, level: 5, dependencies: ['sql_validate'] },
+          { node_id: 'sql_explain', label: 'SQL 解释', task_type: 'llm', status: 'completed', execution_time_ms: 200, level: 6, dependencies: ['sql_validate', 'sql_correct'] },
+        ],
+      },
+    ];
+
+    return HttpResponse.json(historyItems);
   }),
 ];

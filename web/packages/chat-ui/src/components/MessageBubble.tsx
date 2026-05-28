@@ -3,6 +3,9 @@ import type { ChatMessage } from '@/types/api';
 import SqlPanel from '@/components/SqlPanel';
 import SqlExplanation from '@/components/SqlExplanation';
 import ChartPanel from '@/components/ChartPanel';
+import DAGProgress from '@/components/DAGProgress';
+import { useDagStore } from '@/stores/dagStore';
+import { useChatStore } from '@/stores/chatStore';
 
 interface MessageBubbleProps {
   message: ChatMessage;
@@ -16,6 +19,19 @@ export default function MessageBubble({
 }: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const [showData, setShowData] = useState(false);
+
+  // DAG 状态：从 dagStore 获取当前正在执行的 DAG
+  const currentDag = useDagStore((s) => s.currentDag);
+  const queryStatus = useChatStore((s) => s.queryStatus);
+
+  /** 是否应该显示 DAG 进度面板 */
+  const showDAGProgress = useMemo(() => {
+    if (isUser) return false;
+    // 仅在意图分析或 SQL 生成阶段，且存在正在执行的 DAG 时显示
+    const isAnalyzing =
+      queryStatus === 'analyzing_intent' || queryStatus === 'generating_sql';
+    return isAnalyzing && currentDag !== null;
+  }, [isUser, queryStatus, currentDag]);
 
   /** 查询结果表格列（从 data 数组推导） */
   const tableColumns = useMemo(() => {
@@ -51,6 +67,11 @@ export default function MessageBubble({
         {/* ========== 助手消息增强内容 ========== */}
         {!isUser && (
           <div className="mt-3 space-y-3">
+            {/* DAG 执行进度面板 */}
+            {showDAGProgress && currentDag && (
+              <DAGProgress dag={currentDag} maxHeight="400px" />
+            )}
+
             {/* SQL 解释面板 */}
             {message.sql_explanation && (
               <SqlExplanation

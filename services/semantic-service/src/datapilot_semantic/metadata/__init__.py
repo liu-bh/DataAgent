@@ -19,6 +19,8 @@ from datapilot_semantic.metadata.schemas import (
     TableSchema,
 )
 
+from datapilot_semantic.metadata.service import DataSourceService
+
 __all__ = [
     "ColumnSchema",
     "DataSource",
@@ -26,6 +28,7 @@ __all__ = [
     "DataSourceHealth",
     "DataSourceHealthResponse",
     "DataSourceResponse",
+    "DataSourceService",
     "DataSourceUpdate",
     "SourceTable",
     "SourceTableResponse",

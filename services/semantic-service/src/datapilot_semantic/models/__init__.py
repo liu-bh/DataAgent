@@ -23,6 +23,8 @@ ALL_MODELS = [
     TableRelationship,
 ]
 
+from datapilot_semantic.models.service import SemanticModelService
+
 __all__ = [
     "ALL_MODELS",
     "DataSource",
@@ -31,6 +33,7 @@ __all__ = [
     "Metric",
     "MetricDimension",
     "SemanticModel",
+    "SemanticModelService",
     "SourceTable",
     "TableRelationship",
 ]

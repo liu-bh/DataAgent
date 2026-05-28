@@ -8,9 +8,12 @@ from datapilot_semantic.retrieval.vector_store import VectorStore
 from datapilot_semantic.retrieval.hybrid_search import HybridSearcher
 from datapilot_semantic.retrieval.cache import SemanticCache
 
+from datapilot_semantic.retrieval.service import RetrievalService
+
 __all__ = [
     "EmbeddingClient",
     "VectorStore",
     "HybridSearcher",
+    "RetrievalService",
     "SemanticCache",
 ]

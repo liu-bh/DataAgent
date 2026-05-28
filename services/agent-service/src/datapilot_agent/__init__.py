@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from datapilot_agent.api.routes.chat import router as chat_router
+from datapilot_agent.api.routes.dag import router as dag_router
 from datapilot_agent.api.routes.sessions import router as sessions_proxy_router
 
 app = FastAPI(
@@ -28,6 +29,7 @@ app.add_middleware(
 # 注册路由
 app.include_router(chat_router)
 app.include_router(sessions_proxy_router)
+app.include_router(dag_router)
 
 
 @app.get("/health")

@@ -1,3 +1,5 @@
+import type { DAGExecutionStatus } from './dag';
+
 // ==================== 通用 ====================
 
 /** 统一错误响应格式 */
@@ -101,6 +103,8 @@ export interface ChatMessage {
   sql_error?: string;
   /** 用户编辑后的 SQL（对比原 SQL 使用） */
   edited_sql?: string;
+  /** DAG 执行状态（查询生成过程中的执行流程） */
+  dag_status?: DAGExecutionStatus;
   created_at: string;
 }
 
