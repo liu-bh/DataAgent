@@ -459,4 +459,68 @@ export const handlers = [
     ].filter((r) => r.name.toLowerCase().includes(q));
     return HttpResponse.json({ data: results, total: results.length });
   }),
+
+  // -------------------- 端到端执行 / 重执行 / 反馈 --------------------
+
+  http.post('/api/v1/chat/execute', async ({ request }) => {
+    const body = (await request.json()) as { question: string };
+    const userContent = body.question.toLowerCase();
+
+    // 判断是否为数据查询意图
+    const isDataQuery =
+      /营收|销售额|订单|用户|增长|趋势|统计|多少|哪个|排行|排名|总计|合计|平均|地区|分类|产品|库存|数量|金额|上月|本周|最近|top/.test(
+        userContent,
+      );
+
+    if (isDataQuery) {
+      const executeResponse = {
+        sql: "SELECT u.region, SUM(o.amount) AS revenue, COUNT(DISTINCT o.id) AS order_count FROM orders o LEFT JOIN users u ON o.user_id = u.id WHERE o.created_at >= '2026-04-01' AND o.created_at < '2026-05-01' GROUP BY u.region ORDER BY revenue DESC LIMIT 100",
+        explanation:
+          '根据查询结果，上个月各地区的销售额如下：华东地区以 456,789 元位居第一，华南地区紧随其后。总体同比增长 12.5%，表现良好。',
+        confidence: 0.92,
+        columns: ['region', 'revenue', 'order_count'],
+        data: [
+          { region: '华东', revenue: 456789.0, order_count: 1234 },
+          { region: '华南', revenue: 389012.5, order_count: 987 },
+          { region: '华北', revenue: 312456.8, order_count: 856 },
+          { region: '华中', revenue: 234567.3, order_count: 678 },
+          { region: '西南', revenue: 178901.2, order_count: 456 },
+        ],
+      };
+      return HttpResponse.json(executeResponse, { delay: 1500 });
+    }
+
+    // 非查询意图
+    const executeResponse = {
+      sql: '',
+      explanation:
+        '您好！我是 DataPilot 数据助手，可以帮助您查询和分析业务数据。您可以尝试问我关于营收、订单、用户等方面的问题。',
+      confidence: 0.95,
+      data: [],
+      columns: [],
+    };
+    return HttpResponse.json(executeResponse, { delay: 1000 });
+  }),
+
+  http.post('/api/v1/chat/re-execute', async ({ request }) => {
+    const body = (await request.json()) as { sql: string };
+    const reExecuteResponse = {
+      sql: body.sql,
+      explanation: `已执行您编辑的 SQL，查询成功。`,
+      confidence: 1.0,
+      columns: ['region', 'revenue', 'order_count'],
+      data: [
+        { region: '华东', revenue: 460000.0, order_count: 1250 },
+        { region: '华南', revenue: 391000.0, order_count: 990 },
+        { region: '华北', revenue: 315000.0, order_count: 860 },
+        { region: '华中', revenue: 236000.0, order_count: 680 },
+        { region: '西南', revenue: 180000.0, order_count: 460 },
+      ],
+    };
+    return HttpResponse.json(reExecuteResponse, { delay: 800 });
+  }),
+
+  http.post('/api/v1/chat/feedback', async () => {
+    return HttpResponse.json({ status: 'ok' }, { delay: 200 });
+  }),
 ];

@@ -3,6 +3,7 @@ import type {
   ChatMessage,
   SendMessageRequest,
   QueryStatusType,
+  ExecuteResponse,
 } from '@/types/api';
 import { apiClient } from '@/api/client';
 
@@ -27,6 +28,16 @@ interface ChatState {
   updateAssistantSql: (messageId: string, editedSql: string) => void;
   /** 重试上次查询 */
   retryQuery: () => Promise<void>;
+  /** 记录用户编辑的 SQL */
+  editSql: (messageId: string, sql: string) => void;
+  /** 触发 SQL 重执行 */
+  reExecute: (sql: string, sessionId: string, tenantId: string) => Promise<void>;
+  /** 提交反馈 */
+  submitFeedback: (
+    messageId: string,
+    rating: 'thumbs_up' | 'thumbs_down',
+    comment?: string,
+  ) => Promise<void>;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -137,5 +148,67 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     // 注意：需要 sessionId 才能重试，这里从路由获取
     // 实际调用由 Chat 页面处理
+  },
+
+  editSql: (messageId: string, sql: string) => {
+    set((state) => ({
+      messages: state.messages.map((msg) =>
+        msg.id === messageId
+          ? { ...msg, edited_sql: sql }
+          : msg,
+      ),
+    }));
+  },
+
+  reExecute: async (sql: string, sessionId: string, tenantId: string) => {
+    set({ isLoading: true, queryStatus: 'executing' as QueryStatusType, queryError: '' });
+    try {
+      const { data } = await apiClient.post<ExecuteResponse>(
+        '/api/v1/chat/re-execute',
+        { sql, session_id: sessionId, tenant_id: tenantId },
+      );
+
+      const reExecMessage: ChatMessage = {
+        id: `msg-reexec-${Date.now()}`,
+        role: 'assistant',
+        content: data.explanation,
+        sql,
+        sql_explanation: data.explanation,
+        total_rows: data.data?.length,
+        has_more: false,
+        data: data.data,
+        created_at: new Date().toISOString(),
+      };
+
+      set((state) => ({
+        messages: [...state.messages, reExecMessage],
+        isLoading: false,
+        queryStatus: 'done' as QueryStatusType,
+      }));
+    } catch (err) {
+      const errorMsg =
+        err instanceof Error ? err.message : '重执行失败，请稍后重试';
+      set({
+        isLoading: false,
+        queryStatus: 'error' as QueryStatusType,
+        queryError: errorMsg,
+      });
+    }
+  },
+
+  submitFeedback: async (
+    messageId: string,
+    rating: 'thumbs_up' | 'thumbs_down',
+    comment?: string,
+  ) => {
+    try {
+      await apiClient.post('/api/v1/chat/feedback', {
+        message_id: messageId,
+        rating,
+        comment,
+      });
+    } catch {
+      // 反馈提交失败静默处理，不影响用户体验
+    }
   },
 }));

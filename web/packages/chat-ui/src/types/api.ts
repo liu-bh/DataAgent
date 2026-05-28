@@ -170,3 +170,38 @@ export interface SSEErrorEvent {
   code: string;
   message: string;
 }
+
+// ==================== 端到端执行 / 重执行 / 反馈 ====================
+
+/** 端到端执行请求 */
+export interface ExecuteRequest {
+  question: string;
+  session_id: string;
+  tenant_id: string;
+  execute?: boolean;
+}
+
+/** 端到端执行响应 */
+export interface ExecuteResponse {
+  sql: string;
+  explanation: string;
+  confidence: number;
+  data?: Record<string, unknown>[];
+  columns?: string[];
+}
+
+/** 重执行请求 */
+export interface ReExecuteRequest {
+  sql: string;
+  session_id: string;
+  tenant_id: string;
+}
+
+/** 反馈请求 */
+export interface FeedbackRequest {
+  session_id: string;
+  message_id: string;
+  rating: 'thumbs_up' | 'thumbs_down';
+  edited_sql?: string;
+  comment?: string;
+}

@@ -81,3 +81,48 @@ async def execute_sql(
         },
         "trace_id": f"stub-{uuid.uuid4().hex[:8]}",
     }
+
+
+# ---------------------------------------------------------------------------
+# Sprint 3b Track D: 端到端查询入口
+# ---------------------------------------------------------------------------
+
+
+class ChatQueryRequest(BaseModel):
+    """端到端查询请求。"""
+
+    question: str
+    session_id: uuid.UUID
+    tenant_id: str = ""
+    execute: bool = False
+
+
+@router.post("/query")
+async def chat_query(
+    body: ChatQueryRequest,
+    authorization: str = Header(None, description="Bearer {token}"),
+) -> dict:
+    """端到端查询入口：自然语言问题 → SQL → 解释 → 可选执行。
+
+    内部调用 sqlgen-service 的 /api/v1/chat/execute（Phase1 stub）。
+    TODO: Sprint 4 通过 httpx 对接 sqlgen-service
+    """
+    # Phase1 stub: 直接返回提示信息
+    # 生产环境应通过 httpx 调用 sqlgen-service 的 /api/v1/chat/execute
+    stub_response = {
+        "data": {
+            "message_id": str(uuid.uuid4()),
+            "content": f"[Stub] 收到查询请求：{body.question}。Agent 端到端查询尚未接入 sqlgen-service。",
+            "sql": None,
+            "sql_dialect": None,
+            "sql_explanation": None,
+            "chart_spec": None,
+            "data": None,
+            "columns": [],
+            "total_rows": 0,
+            "has_more": False,
+            "execute": body.execute,
+        },
+        "trace_id": f"stub-{uuid.uuid4().hex[:8]}",
+    }
+    return stub_response
