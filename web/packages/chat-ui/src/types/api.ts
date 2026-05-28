@@ -95,8 +95,23 @@ export interface ChatMessage {
   has_more?: boolean;
   /** 游标分页 token */
   cursor?: string;
+  /** 查询结果数据（前 N 行） */
+  data?: Record<string, unknown>[];
+  /** SQL 解析错误信息 */
+  sql_error?: string;
+  /** 用户编辑后的 SQL（对比原 SQL 使用） */
+  edited_sql?: string;
   created_at: string;
 }
+
+/** NL2SQL 查询处理状态 */
+export type QueryStatusType =
+  | 'idle'
+  | 'analyzing_intent'
+  | 'generating_sql'
+  | 'executing'
+  | 'done'
+  | 'error';
 
 export interface SendMessageRequest {
   session_id: string;

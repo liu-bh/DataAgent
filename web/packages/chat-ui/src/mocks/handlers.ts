@@ -201,33 +201,62 @@ export const handlers = [
 
   http.post('/api/v1/chat/message', async ({ request }) => {
     const body = (await request.json()) as { content: string };
+    const userContent = body.content.toLowerCase();
 
-    // Mock AI 回复
-    const aiResponse: ChatMessage = {
-      id: `msg-ai-${Date.now()}`,
-      role: 'assistant',
-      content: `收到您的问题："${body.content}"。这是一个 Mock 回复，后端服务就绪后将返回真实的 AI 查询结果。`,
-      sql: 'SELECT * FROM sample_table LIMIT 10',
-      sql_dialect: 'mysql',
-      sql_explanation: '这是一个示例 SQL 查询，从 sample_table 中取前 10 条记录。',
-      chart_spec: {
-        chartType: 'bar',
-        xAxis: 'category',
-        yAxis: 'value',
-      },
-      freshness_note: '数据截至 2026-05-27 00:00',
-      total_rows: 100,
-      has_more: false,
-      created_at: new Date().toISOString(),
-    };
+    // 判断是否为数据查询意图（简单关键词匹配）
+    const isDataQuery =
+      /营收|销售额|订单|用户|增长|趋势|统计|多少|哪个|排行|排名|总计|合计|平均|地区|分类|产品|库存|数量|金额|上月|本周|最近|top/.test(
+        userContent,
+      );
+
+    let aiResponse: ChatMessage;
+
+    if (isDataQuery) {
+      // 数据查询意图：返回完整的 SQL + 数据结果
+      aiResponse = {
+        id: `msg-ai-${Date.now()}`,
+        role: 'assistant',
+        content:
+          '根据查询结果，上个月各地区的销售额如下：华东地区以 456,789 元位居第一，华南地区紧随其后。总体同比增长 12.5%，表现良好。',
+        sql: "SELECT u.region, SUM(o.amount) AS revenue, COUNT(DISTINCT o.id) AS order_count FROM orders o LEFT JOIN users u ON o.user_id = u.id WHERE o.created_at >= '2026-04-01' AND o.created_at < '2026-05-01' GROUP BY u.region ORDER BY revenue DESC LIMIT 100",
+        sql_dialect: 'mysql',
+        sql_explanation:
+          '这个查询统计了上个月（2026年4月）各地区的销售额和订单数。通过 orders 表和 users 表联表查询，按地区分组并按销售额降序排列。',
+        chart_spec: {
+          chartType: 'bar',
+          xAxis: 'region',
+          yAxis: 'revenue',
+        },
+        freshness_note: '数据截至 2026-05-25 23:59',
+        data_cutoff: '2026-05-25T23:59:00+08:00',
+        total_rows: 8,
+        has_more: false,
+        data: [
+          { region: '华东', revenue: 456789.0, order_count: 1234 },
+          { region: '华南', revenue: 389012.5, order_count: 987 },
+          { region: '华北', revenue: 312456.8, order_count: 856 },
+          { region: '华中', revenue: 234567.3, order_count: 678 },
+          { region: '西南', revenue: 178901.2, order_count: 456 },
+        ],
+        created_at: new Date().toISOString(),
+      };
+    } else {
+      // 闲聊意图：仅返回文本，不返回 SQL
+      aiResponse = {
+        id: `msg-ai-${Date.now()}`,
+        role: 'assistant',
+        content: `您好！我是 DataPilot 数据助手，可以帮助您查询和分析业务数据。\n\n您可以尝试问我：\n- "上月各地区销售额是多少？"\n- "最近 7 天的新增用户数趋势"\n- "哪个产品类别的订单量最多？"\n\n请告诉我您想了解什么数据。`,
+        created_at: new Date().toISOString(),
+      };
+    }
 
     return HttpResponse.json(
       {
         data: aiResponse,
         trace_id: `mock-trace-${Date.now()}`,
       },
-      // 模拟网络延迟
-      { delay: 800 },
+      // 模拟 LLM 思考延迟 1-2 秒
+      { delay: 1500 },
     );
   }),
 

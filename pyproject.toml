@@ -21,6 +21,21 @@ members = [
     "services/auth-service",
 ]
 
+[tool.uv.sources]
+datapilot-common = { workspace = true }
+datapilot-license = { workspace = true }
+datapilot-llm = { workspace = true }
+datapilot-prompt = { workspace = true }
+datapilot-sql = { workspace = true }
+datapilot-proto = { workspace = true }
+datapilot-agent = { workspace = true }
+datapilot-semantic = { workspace = true }
+datapilot-sqlgen = { workspace = true }
+datapilot-queryexec = { workspace = true }
+datapilot-guardrail = { workspace = true }
+datapilot-session = { workspace = true }
+datapilot-auth = { workspace = true }
+
 [tool.uv]
 dev-dependencies = [
     "pytest>=8.0",
@@ -52,7 +67,7 @@ select = [
 ignore = ["E501"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["datapilot_common", "datapilot_license", "datapilot_llm", "datapilot_prompt", "datapilot_sql", "datapilot_proto"]
+known-first-party = ["datapilot_common", "datapilot_license", "datapilot_llm", "datapilot_prompt", "datapilot_sql", "datapilot_proto", "datapilot_sqlgen", "datapilot_semantic", "datapilot_guardrail", "datapilot_session", "datapilot_auth", "datapilot_agent", "datapilot_queryexec"]
 
 [tool.ruff.format]
 quote-style = "double"

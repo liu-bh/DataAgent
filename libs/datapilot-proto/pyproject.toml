@@ -6,5 +6,5 @@ requires-python = ">=3.11"
 dependencies = [
     "grpcio>=1.67",
     "grpcio-tools>=1.67",
-    "betterproto>=2.0",
+    "betterproto>=2.0.0b7",
 ]

@@ -1,10 +1,11 @@
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useChatStore } from '@/stores/chatStore';
 import Sidebar from '@/components/Sidebar';
 import MessageBubble from '@/components/MessageBubble';
+import QueryStatus from '@/components/QueryStatus';
 import ChatInput from '@/components/ChatInput';
 import Loading from '@/components/Loading';
 
@@ -23,6 +24,9 @@ export default function Chat() {
   const sendMessage = useChatStore((s) => s.sendMessage);
   const clearMessages = useChatStore((s) => s.clearMessages);
   const loadMessages = useChatStore((s) => s.loadMessages);
+  const queryStatus = useChatStore((s) => s.queryStatus);
+  const queryError = useChatStore((s) => s.queryError);
+  const updateAssistantSql = useChatStore((s) => s.updateAssistantSql);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -55,7 +59,7 @@ export default function Chat() {
   // 自动滚动到底部
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, queryStatus]);
 
   const handleSend = async (content: string) => {
     let sid = currentSessionId;
@@ -71,6 +75,27 @@ export default function Chat() {
     }
 
     await sendMessage({ session_id: sid, content });
+  };
+
+  /** 编辑 SQL 回调 */
+  const handleEditSql = (messageId: string, editedSql: string) => {
+    updateAssistantSql(messageId, editedSql);
+  };
+
+  /** 重试查询 */
+  const handleRetry = () => {
+    const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');
+    if (lastUserMsg && currentSessionId) {
+      // 移除错误消息
+      const lastUserIdx = messages.lastIndexOf(lastUserMsg);
+      const { setQueryStatus } = useChatStore.getState();
+      setQueryStatus('idle');
+      useChatStore.setState((state) => ({
+        messages: state.messages.slice(0, lastUserIdx),
+      }));
+      // 重新发送
+      sendMessage({ session_id: currentSessionId, content: lastUserMsg.content });
+    }
   };
 
   // 未认证时不渲染主内容
@@ -146,23 +171,20 @@ export default function Chat() {
               </div>
             ) : (
               messages.map((msg) => (
-                <MessageBubble key={msg.id} message={msg} />
+                <MessageBubble
+                  key={msg.id}
+                  message={msg}
+                  onEditSql={handleEditSql}
+                />
               ))
             )}
 
-            {/* 加载指示器 */}
-            {isLoading && (
-              <div className="flex justify-start mb-4">
-                <div className="flex items-center gap-2 rounded-2xl bg-white px-4 py-3 shadow-sm border border-gray-100">
-                  <div className="flex gap-1">
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-gray-300" style={{ animationDelay: '0ms' }} />
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-gray-300" style={{ animationDelay: '150ms' }} />
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-gray-300" style={{ animationDelay: '300ms' }} />
-                  </div>
-                  <span className="text-xs text-gray-400">正在思考...</span>
-                </div>
-              </div>
-            )}
+            {/* 查询状态指示器 */}
+            <QueryStatus
+              status={queryStatus}
+              errorMessage={queryError}
+              onRetry={handleRetry}
+            />
 
             <div ref={messagesEndRef} />
           </div>
