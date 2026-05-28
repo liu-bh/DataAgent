@@ -11,12 +11,14 @@ resolution-markers = [
 members = [
     "datapilot-agent",
     "datapilot-auth",
+    "datapilot-cache",
     "datapilot-chart",
     "datapilot-common",
     "datapilot-dag",
     "datapilot-guardrail",
     "datapilot-license",
     "datapilot-llm",
+    "datapilot-memory",
     "datapilot-prompt",
     "datapilot-proto",
     "datapilot-queryexec",
@@ -690,6 +692,11 @@ requires-dist = [
 ]
 
 [[package]]
+name = "datapilot-cache"
+version = "0.1.0"
+source = { editable = "libs/datapilot-cache" }
+
+[[package]]
 name = "datapilot-chart"
 version = "0.1.0"
 source = { editable = "libs/datapilot-chart" }
@@ -796,6 +803,17 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.0" },
     { name = "structlog", specifier = ">=24.0" },
 ]
+
+[[package]]
+name = "datapilot-memory"
+version = "0.1.0"
+source = { editable = "libs/datapilot-memory" }
+dependencies = [
+    { name = "structlog" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "structlog", specifier = ">=24.4" }]
 
 [[package]]
 name = "datapilot-prompt"

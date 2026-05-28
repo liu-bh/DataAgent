@@ -1,0 +1,15 @@
+[project]
+name = "datapilot-memory"
+version = "0.1.0"
+description = "DataPilot Memory: 对话记忆管理与上下文窗口"
+requires-python = ">=3.11"
+dependencies = [
+    "structlog>=24.4",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/datapilot_memory"]

@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import Loading from '@/components/Loading';
+import NotFoundPage from '@/pages/NotFound';
 
 const Login = lazy(() => import('@/pages/Login'));
 const Chat = lazy(() => import('@/pages/Chat'));
@@ -58,6 +59,6 @@ export const router = createBrowserRouter([
   },
   {
     path: '*',
-    element: <Navigate to="/chat" replace />,
+    element: <NotFoundPage />,
   },
 ]);
