@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import math
-from datetime import datetime
+from datetime import datetime  # noqa: TC003 — Pydantic 需要 datetime 运行时可用
 from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator

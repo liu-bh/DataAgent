@@ -206,10 +206,15 @@ class SQLPostProcessor:
             渲染后的 SQL 字符串。
         """
         try:
-            from datapilot_sql import SQLRenderer
+            from datapilot_sql.dialect import Dialect
+            from datapilot_sql.renderer import SQLRenderer
 
-            renderer = SQLRenderer(dialect=dialect)  # type: ignore[no-untyped-call]
-            return renderer.render(ast)  # type: ignore[no-untyped-call]
+            renderer = SQLRenderer()
+            try:
+                target_dialect = Dialect(dialect)
+            except ValueError:
+                target_dialect = Dialect.MYSQL
+            return renderer.render(ast, dialect=target_dialect)
         except ImportError:
             try:
                 return ast.sql(dialect=dialect)  # type: ignore[union-attr]

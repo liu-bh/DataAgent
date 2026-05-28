@@ -22,7 +22,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime  # noqa: TC003 — SQLAlchemy Mapped[datetime] 需要运行时可用
 from typing import Any
 
 from sqlalchemy import DateTime, String, func

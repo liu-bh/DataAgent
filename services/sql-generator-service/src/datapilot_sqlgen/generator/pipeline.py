@@ -478,9 +478,15 @@ class NL2SQLPipeline:
                     prompt=prompt,
                     json_mode=True,
                 )
-                output = result.content
-                explanation = ""
-                confidence = 0.8
+                # 兼容 LLMResponse dataclass 和 dict 两种返回形式
+                if isinstance(result, dict):
+                    output = result["content"]
+                    explanation = result.get("explanation", "")
+                    confidence = result.get("confidence", 0.8)
+                else:
+                    output = result.content
+                    explanation = ""
+                    confidence = 0.8
                 return output, explanation, confidence
             except Exception as e:
                 logger.warning("LLM 调用失败", error=str(e))

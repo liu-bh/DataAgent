@@ -5,8 +5,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Any, Optional
+from datetime import datetime  # noqa: TC003 — SQLAlchemy Mapped[datetime] 需要运行时可用
+from typing import Any
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, String, Text
@@ -35,17 +35,17 @@ class Dimension(TenantBase, Base):
     )
 
     # --- 关联 ---
-    semantic_model: Mapped["SemanticModel"] = relationship(  # noqa: F821
+    semantic_model: Mapped[SemanticModel] = relationship(  # noqa: F821
         "SemanticModel",
         back_populates="dimensions",
         lazy="noload",
     )
-    source_table: Mapped[Optional["SourceTable"]] = relationship(  # noqa: F821
+    source_table: Mapped[SourceTable | None] = relationship(  # noqa: F821
         "SourceTable",
         back_populates="dimensions",
         lazy="noload",
     )
-    metric_dimensions: Mapped[list["MetricDimension"]] = relationship(  # noqa: F821
+    metric_dimensions: Mapped[list[MetricDimension]] = relationship(  # noqa: F821
         "MetricDimension",
         back_populates="dimension",
         lazy="noload",
@@ -63,12 +63,12 @@ class Dimension(TenantBase, Base):
         nullable=False,
         comment="维度名称，如 地区",
     )
-    column_name: Mapped[Optional[str]] = mapped_column(
+    column_name: Mapped[str | None] = mapped_column(
         String(200),
         nullable=True,
         comment="对应物理列名",
     )
-    table_id: Mapped[Optional[str]] = mapped_column(
+    table_id: Mapped[str | None] = mapped_column(
         String(36),
         ForeignKey("source_tables.id"),
         nullable=True,
@@ -80,7 +80,7 @@ class Dimension(TenantBase, Base):
         default=list,
         comment="同义词数组，如 ['区域', '大区', '省份']",
     )
-    hierarchy: Mapped[Optional[dict[str, Any]]] = mapped_column(
+    hierarchy: Mapped[dict[str, Any] | None] = mapped_column(
         JSONB,
         nullable=True,
         comment="层级定义，如 {level: 'province', children: ['city', 'district']}",
@@ -91,17 +91,17 @@ class Dimension(TenantBase, Base):
         default=False,
         comment="是否虚拟维度（CASE WHEN 计算）",
     )
-    virtual_expression: Mapped[Optional[str]] = mapped_column(
+    virtual_expression: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         comment="虚拟维度表达式（is_virtual=true 时必填）",
     )
-    embedding: Mapped[Optional[list[float]]] = mapped_column(
+    embedding: Mapped[list[float] | None] = mapped_column(
         Vector(1536),
         nullable=True,
         comment="维度语义向量 (pgvector)",
     )
-    deleted_at: Mapped[Optional[datetime]] = mapped_column(
+    deleted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
         comment="软删除时间，NULL 表示未删除",

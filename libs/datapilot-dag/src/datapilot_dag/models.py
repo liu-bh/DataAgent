@@ -132,7 +132,7 @@ class DAGraph:
         Returns:
             True 表示存在循环。
         """
-        WHITE, GRAY, BLACK = 0, 1, 2
+        WHITE, GRAY, BLACK = 0, 1, 2  # noqa: N806 — DFS 三色算法常量
         color: dict[str, int] = {nid: WHITE for nid in self.nodes}
 
         def _dfs(node_id: str) -> bool:

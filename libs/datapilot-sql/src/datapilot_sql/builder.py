@@ -22,7 +22,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any
 
 import sqlglot
 from sqlglot import expressions as exp
@@ -211,7 +211,7 @@ def cond(condition: str) -> _ConditionBuilder:
 
 
 # 列定义类型：支持字符串列名、带别名的元组、sqlglot 表达式、Alias 或 Aggregate
-ColumnSpec = Union[str, tuple[str, str], exp.Expression, exp.Alias, Aggregate]
+ColumnSpec = str | tuple[str, str] | exp.Expression | exp.Alias | Aggregate
 
 
 class SQLBuilder:

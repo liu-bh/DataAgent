@@ -160,12 +160,11 @@ class LocalPodPool(PodPool):
                 if self._lifecycle.transition(pod_id, PodState.TERMINATED):
                     self._lifecycle.remove(pod_id)
                     cleaned += 1
-            elif state == PodState.READY:
-                if self._lifecycle.transition(pod_id, PodState.TERMINATING):
-                    # 立即转为 TERMINATED
-                    self._lifecycle.transition(pod_id, PodState.TERMINATED)
-                    self._lifecycle.remove(pod_id)
-                    cleaned += 1
+            elif state == PodState.READY and self._lifecycle.transition(pod_id, PodState.TERMINATING):
+                # 立即转为 TERMINATED
+                self._lifecycle.transition(pod_id, PodState.TERMINATED)
+                self._lifecycle.remove(pod_id)
+                cleaned += 1
 
         return cleaned
 

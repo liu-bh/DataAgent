@@ -5,8 +5,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Optional
+from datetime import datetime  # noqa: TC003 — SQLAlchemy Mapped[datetime] 需要运行时可用
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, Text
@@ -34,18 +33,18 @@ class Metric(TenantBase, Base):
     )
 
     # --- 关联 ---
-    semantic_model: Mapped["SemanticModel"] = relationship(  # noqa: F821
+    semantic_model: Mapped[SemanticModel] = relationship(  # noqa: F821
         "SemanticModel",
         back_populates="metrics",
         lazy="noload",
     )
-    parent_metric: Mapped[Optional["Metric"]] = relationship(  # noqa: F821
+    parent_metric: Mapped[Metric | None] = relationship(  # noqa: F821
         "Metric",
         remote_side="Metric.id",
         foreign_keys="Metric.parent_metric_id",
         lazy="noload",
     )
-    metric_dimensions: Mapped[list["MetricDimension"]] = relationship(  # noqa: F821
+    metric_dimensions: Mapped[list[MetricDimension]] = relationship(  # noqa: F821
         "MetricDimension",
         back_populates="metric",
         lazy="noload",
@@ -63,7 +62,7 @@ class Metric(TenantBase, Base):
         nullable=False,
         comment="指标名称，如 GMV",
     )
-    description: Mapped[Optional[str]] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         comment="指标描述",
@@ -73,7 +72,7 @@ class Metric(TenantBase, Base):
         nullable=False,
         comment="计算表达式，如 SUM(amount)",
     )
-    unit: Mapped[Optional[str]] = mapped_column(
+    unit: Mapped[str | None] = mapped_column(
         String(20),
         nullable=True,
         comment="单位：元/个/率",
@@ -84,18 +83,18 @@ class Metric(TenantBase, Base):
         default=1,
         comment="版本号，创建时为 1，更新时自动递增",
     )
-    effective_time: Mapped[Optional[datetime]] = mapped_column(
+    effective_time: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
         comment="版本生效时间",
     )
-    parent_metric_id: Mapped[Optional[str]] = mapped_column(
+    parent_metric_id: Mapped[str | None] = mapped_column(
         String(36),
         ForeignKey("metrics.id"),
         nullable=True,
         comment="父指标 ID（嵌套引用）",
     )
-    embedding: Mapped[Optional[list[float]]] = mapped_column(
+    embedding: Mapped[list[float] | None] = mapped_column(
         Vector(1536),
         nullable=True,
         comment="指标语义向量 (pgvector)",
@@ -106,7 +105,7 @@ class Metric(TenantBase, Base):
         default=list,
         comment="标签数组",
     )
-    deleted_at: Mapped[Optional[datetime]] = mapped_column(
+    deleted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
         comment="软删除时间，NULL 表示未删除",

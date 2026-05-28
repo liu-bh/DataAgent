@@ -6,9 +6,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Any, Optional
-from uuid import UUID
+from datetime import datetime  # noqa: TC003 — SQLAlchemy Mapped[datetime] 需要运行时可用
+from typing import Any
+from uuid import UUID  # noqa: TC003 — SQLAlchemy Mapped[UUID] 需要运行时可用
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
@@ -27,7 +27,6 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from datapilot_common.database import Base, TenantBase
-
 
 # ---------------------------------------------------------------------------
 # DataSource 数据源
@@ -54,12 +53,12 @@ class DataSource(TenantBase, Base):
     username: Mapped[str] = mapped_column(String(100), nullable=False, comment="用户名")
     password: Mapped[str] = mapped_column(Text, nullable=False, comment="加密存储的密码")
     pool_size: Mapped[int] = mapped_column(Integer, nullable=True, comment="连接池大小")
-    freshness_level: Mapped[Optional[str]] = mapped_column(
+    freshness_level: Mapped[str | None] = mapped_column(
         String(10),
         nullable=True,
         comment="数据新鲜度: realtime/hourly/daily/custom",
     )
-    freshness_cron: Mapped[Optional[str]] = mapped_column(
+    freshness_cron: Mapped[str | None] = mapped_column(
         String(100), nullable=True, comment="数据新鲜度同步频率（仅 custom）"
     )
     status: Mapped[str] = mapped_column(
@@ -68,11 +67,11 @@ class DataSource(TenantBase, Base):
         server_default="active",
         comment="状态: active/disabled",
     )
-    last_health_check: Mapped[Optional[datetime]] = mapped_column(
+    last_health_check: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="最后健康检查时间"
     )
     # 软删除
-    deleted_at: Mapped[Optional[datetime]] = mapped_column(
+    deleted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="软删除时间"
     )
 
@@ -123,10 +122,10 @@ class DataSourceHealth(Base):
         index=True,
         comment="关联数据源 ID",
     )
-    pool_usage: Mapped[Optional[float]] = mapped_column(
+    pool_usage: Mapped[float | None] = mapped_column(
         Numeric(5, 2), nullable=True, comment="连接池使用率（百分比）"
     )
-    avg_latency_ms: Mapped[Optional[int]] = mapped_column(
+    avg_latency_ms: Mapped[int | None] = mapped_column(
         Integer, nullable=True, comment="平均查询延迟（毫秒）"
     )
     status: Mapped[str] = mapped_column(
@@ -178,33 +177,33 @@ class SourceTable(TenantBase, Base):
         index=True,
         comment="关联数据源 ID",
     )
-    schema_name: Mapped[Optional[str]] = mapped_column(
+    schema_name: Mapped[str | None] = mapped_column(
         String(100), nullable=True, comment="Schema 名"
     )
     table_name: Mapped[str] = mapped_column(
         String(100), nullable=False, comment="表名"
     )
-    columns: Mapped[Optional[dict[str, Any]]] = mapped_column(
+    columns: Mapped[dict[str, Any] | None] = mapped_column(
         JSONB,
         nullable=True,
         comment="列定义 [{name, type, description, is_primary_key}]",
     )
-    row_count: Mapped[Optional[int]] = mapped_column(
+    row_count: Mapped[int | None] = mapped_column(
         BigInteger, nullable=True, comment="估算行数"
     )
-    description: Mapped[Optional[str]] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         Text, nullable=True, comment="表描述"
     )
-    embedding: Mapped[Optional[list[float]]] = mapped_column(
+    embedding: Mapped[list[float] | None] = mapped_column(
         Vector(1536),
         nullable=True,
         comment="表级语义向量（Track C 负责）",
     )
-    last_synced_at: Mapped[Optional[datetime]] = mapped_column(
+    last_synced_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="最后同步时间"
     )
     # 软删除
-    deleted_at: Mapped[Optional[datetime]] = mapped_column(
+    deleted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="软删除时间"
     )
 

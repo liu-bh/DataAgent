@@ -9,6 +9,7 @@ from datapilot_semantic.models.dimension import Dimension
 from datapilot_semantic.models.metric import Metric
 from datapilot_semantic.models.metric_dimension import MetricDimension
 from datapilot_semantic.models.semantic_model import SemanticModel
+from datapilot_semantic.models.service import SemanticModelService
 from datapilot_semantic.models.table_relationship import TableRelationship
 
 # 所有 ORM 模型列表，供 Alembic autogenerate 使用
@@ -22,8 +23,6 @@ ALL_MODELS = [
     MetricDimension,
     TableRelationship,
 ]
-
-from datapilot_semantic.models.service import SemanticModelService
 
 __all__ = [
     "ALL_MODELS",

@@ -82,6 +82,10 @@ ignore = ["E501"]
 [tool.ruff.lint.isort]
 known-first-party = ["datapilot_common", "datapilot_license", "datapilot_llm", "datapilot_prompt", "datapilot_sql", "datapilot_proto", "datapilot_dag", "datapilot_sandbox", "datapilot_tools", "datapilot_chart", "datapilot_memory", "datapilot_cache", "datapilot_sqlgen", "datapilot_semantic", "datapilot_guardrail", "datapilot_session", "datapilot_auth", "datapilot_agent", "datapilot_queryexec"]
 
+[tool.ruff.lint.per-file-ignores]
+# FastAPI 惯用写法：Depends() 在参数默认值中是标准模式
+"*/api/routes/*.py" = ["B008"]
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"

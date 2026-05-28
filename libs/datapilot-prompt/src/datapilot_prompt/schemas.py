@@ -5,10 +5,10 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-from decimal import Decimal
+from datetime import datetime  # noqa: TC003 — Pydantic 需要 datetime 运行时可用
+from decimal import Decimal  # noqa: TC003 — Pydantic 需要 Decimal 运行时可用
 from typing import Literal
-from uuid import UUID
+from uuid import UUID  # noqa: TC003 — Pydantic 需要 UUID 运行时可用
 
 from pydantic import BaseModel, ConfigDict, Field
 

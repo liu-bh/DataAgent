@@ -166,11 +166,13 @@ class AsyncTaskManager:
         async with self._lock:
             to_remove: list[str] = []
             for task_id, task in self._tasks.items():
-                if task.status in (TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.CANCELLED):
-                    if task.completed_at is not None:
-                        age = (now - task.completed_at).total_seconds()
-                        if age > max_age_seconds:
-                            to_remove.append(task_id)
+                if (
+                    task.status in (TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.CANCELLED)
+                    and task.completed_at is not None
+                ):
+                    age = (now - task.completed_at).total_seconds()
+                    if age > max_age_seconds:
+                        to_remove.append(task_id)
 
             for task_id in to_remove:
                 del self._tasks[task_id]

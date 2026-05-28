@@ -42,7 +42,7 @@ class DAGraph:
     dag_id: str
     nodes: dict[str, DAGNode] = field(default_factory=dict)
 
-    def topological_levels(self) -> list[list[str]]:
+    def topological_sort(self) -> list[list[str]]:
         """返回拓扑排序的层级列表。"""
         if not self.nodes:
             return []

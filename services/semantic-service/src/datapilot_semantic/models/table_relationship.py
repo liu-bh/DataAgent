@@ -5,8 +5,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Optional
+from datetime import datetime  # noqa: TC003 — SQLAlchemy Mapped[datetime] 需要运行时可用
 
 from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -30,18 +29,18 @@ class TableRelationship(TenantBase, Base):
     )
 
     # --- 关联 ---
-    semantic_model: Mapped["SemanticModel"] = relationship(  # noqa: F821
+    semantic_model: Mapped[SemanticModel] = relationship(  # noqa: F821
         "SemanticModel",
         back_populates="table_relationships",
         lazy="noload",
     )
-    left_table: Mapped["SourceTable"] = relationship(  # noqa: F821
+    left_table: Mapped[SourceTable] = relationship(  # noqa: F821
         "SourceTable",
         back_populates="left_relationships",
         foreign_keys="TableRelationship.left_table_id",
         lazy="noload",
     )
-    right_table: Mapped["SourceTable"] = relationship(  # noqa: F821
+    right_table: Mapped[SourceTable] = relationship(  # noqa: F821
         "SourceTable",
         back_populates="right_relationships",
         foreign_keys="TableRelationship.right_table_id",
@@ -77,7 +76,7 @@ class TableRelationship(TenantBase, Base):
         nullable=False,
         comment="连接条件，如 orders.user_id = users.id",
     )
-    deleted_at: Mapped[Optional[datetime]] = mapped_column(
+    deleted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
         comment="软删除时间，NULL 表示未删除",

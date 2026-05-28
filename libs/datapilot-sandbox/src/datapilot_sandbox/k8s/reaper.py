@@ -74,11 +74,8 @@ class PodReaper:
     async def _cleanup_loop(self) -> None:
         """定期清理循环。"""
         while self._running:
-            try:
+            with contextlib.suppress(Exception):
                 await self.reap_once()
-            except Exception:
-                # 单次清理异常不影响后续清理
-                pass
             await asyncio.sleep(self._cleanup_interval)
 
     async def reap_once(self) -> int:

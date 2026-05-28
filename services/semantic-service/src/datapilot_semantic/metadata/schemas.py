@@ -5,9 +5,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime  # noqa: TC003 — Pydantic default_factory 使用 datetime.now()
 from typing import Any
-from uuid import UUID
+from uuid import UUID  # noqa: TC003 — Pydantic model_validate 需要 UUID 运行时可用
 
 from pydantic import BaseModel, ConfigDict, Field
 
