@@ -9,7 +9,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from datapilot_agent.api.routes.chat import router as chat_router
 from datapilot_agent.api.routes.dag import router as dag_router
+from datapilot_agent.api.routes.rca import router as rca_router
 from datapilot_agent.api.routes.sessions import router as sessions_proxy_router
+from datapilot_agent.api.routes.tools import router as tools_router
 
 app = FastAPI(
     title="DataPilot Agent Service",
@@ -30,6 +32,8 @@ app.add_middleware(
 app.include_router(chat_router)
 app.include_router(sessions_proxy_router)
 app.include_router(dag_router)
+app.include_router(rca_router)
+app.include_router(tools_router)
 
 
 @app.get("/health")

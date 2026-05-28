@@ -14,6 +14,7 @@ members = [
     "libs/datapilot-proto",
     "libs/datapilot-dag",
     "libs/datapilot-sandbox",
+    "libs/datapilot-tools",
     "services/agent-service",
     "services/semantic-service",
     "services/sql-generator-service",
@@ -32,6 +33,7 @@ datapilot-sql = { workspace = true }
 datapilot-proto = { workspace = true }
 datapilot-dag = { workspace = true }
 datapilot-sandbox = { workspace = true }
+datapilot-tools = { workspace = true }
 datapilot-agent = { workspace = true }
 datapilot-semantic = { workspace = true }
 datapilot-sqlgen = { workspace = true }
@@ -71,7 +73,7 @@ select = [
 ignore = ["E501"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["datapilot_common", "datapilot_license", "datapilot_llm", "datapilot_prompt", "datapilot_sql", "datapilot_proto", "datapilot_dag", "datapilot_sandbox", "datapilot_sqlgen", "datapilot_semantic", "datapilot_guardrail", "datapilot_session", "datapilot_auth", "datapilot_agent", "datapilot_queryexec"]
+known-first-party = ["datapilot_common", "datapilot_license", "datapilot_llm", "datapilot_prompt", "datapilot_sql", "datapilot_proto", "datapilot_dag", "datapilot_sandbox", "datapilot_tools", "datapilot_sqlgen", "datapilot_semantic", "datapilot_guardrail", "datapilot_session", "datapilot_auth", "datapilot_agent", "datapilot_queryexec"]
 
 [tool.ruff.format]
 quote-style = "double"

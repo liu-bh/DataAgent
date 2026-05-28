@@ -126,3 +126,16 @@ async def chat_query(
         "trace_id": f"stub-{uuid.uuid4().hex[:8]}",
     }
     return stub_response
+
+
+# ---------------------------------------------------------------------------
+# Sprint 8 Track D: RCA 意图路由
+# ---------------------------------------------------------------------------
+# 新增路由挂载在 main.py 中完成：
+#   from datapilot_agent.api.routes.rca import router as rca_router
+#   from datapilot_agent.api.routes.tools import router as tools_router
+#   app.include_router(rca_router)
+#   app.include_router(tools_router)
+#
+# TODO: Sprint 9 在意图识别层增加 RCA 意图路由，当检测到根因分析意图时
+#   转发至 RCAOrchestrator 处理并返回分析报告。

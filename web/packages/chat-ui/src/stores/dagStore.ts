@@ -1,8 +1,10 @@
 import { create } from 'zustand';
 import type { DAGExecutionStatus, DAGExecuteRequest } from '@/types/dag';
 import type { SandboxResult } from '@/types/sandbox';
+import type { RCAReport, RCAAnalyzeRequest } from '@/types/rca';
 import { executeDAG as apiExecuteDAG, getDAGStatus } from '@/api/dag';
 import { executePythonCode } from '@/api/sandbox';
+import { analyzeRCA as apiAnalyzeRCA } from '@/api/rca';
 
 /** 轮询间隔（毫秒） */
 const POLL_INTERVAL_MS = 1000;
@@ -43,6 +45,16 @@ interface DAGState {
   executePython: (code: string, dagId?: string) => Promise<void>;
   /** 清空 Python 执行结果 */
   clearPythonResult: () => void;
+  /** RCA 分析报告 */
+  rcaReport: RCAReport | null;
+  /** RCA 是否正在加载 */
+  rcaLoading: boolean;
+  /** RCA 错误信息 */
+  rcaError: string;
+  /** 发起 RCA 根因分析 */
+  analyzeRCA: (data: RCAAnalyzeRequest) => Promise<void>;
+  /** 清空 RCA 状态 */
+  clearRCA: () => void;
 }
 
 export const useDagStore = create<DAGState>((set, get) => ({
@@ -55,6 +67,9 @@ export const useDagStore = create<DAGState>((set, get) => ({
   pythonCode: '',
   pythonResult: null,
   pythonExecuting: false,
+  rcaReport: null,
+  rcaLoading: false,
+  rcaError: '',
 
   executeDAG: async (params: DAGExecuteRequest) => {
     // 先停止已有的轮询
@@ -211,5 +226,22 @@ export const useDagStore = create<DAGState>((set, get) => ({
 
   clearPythonResult: () => {
     set({ pythonResult: null, pythonCode: '', pythonExecuting: false });
+  },
+
+  analyzeRCA: async (data: RCAAnalyzeRequest) => {
+    set({ rcaLoading: true, rcaError: '', rcaReport: null });
+
+    try {
+      const response = await apiAnalyzeRCA(data);
+      set({ rcaReport: response.report, rcaLoading: false });
+    } catch (err) {
+      const errorMsg =
+        err instanceof Error ? err.message : 'RCA 分析失败，请稍后重试';
+      set({ rcaLoading: false, rcaError: errorMsg });
+    }
+  },
+
+  clearRCA: () => {
+    set({ rcaReport: null, rcaLoading: false, rcaError: '' });
   },
 }));

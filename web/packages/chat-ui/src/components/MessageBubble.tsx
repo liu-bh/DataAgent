@@ -1,11 +1,13 @@
 import { useState, useMemo, useCallback } from 'react';
 import type { ChatMessage } from '@/types/api';
+import type { RCAReport } from '@/types/rca';
 import SqlPanel from '@/components/SqlPanel';
 import SqlExplanation from '@/components/SqlExplanation';
 import ChartPanel from '@/components/ChartPanel';
 import DAGProgress from '@/components/DAGProgress';
 import PythonEditor from '@/components/PythonEditor';
 import OutputPanel from '@/components/OutputPanel';
+import RCAReportView from '@/components/RCAReport';
 import { useDagStore } from '@/stores/dagStore';
 import { useChatStore } from '@/stores/chatStore';
 
@@ -32,6 +34,11 @@ export default function MessageBubble({
   const executePython = useDagStore((s) => s.executePython);
   const clearPythonResult = useDagStore((s) => s.clearPythonResult);
 
+  // RCA 根因分析状态
+  const rcaReport = useDagStore((s) => s.rcaReport);
+  const rcaLoading = useDagStore((s) => s.rcaLoading);
+  const rcaError = useDagStore((s) => s.rcaError);
+
   /** 是否应该显示 DAG 进度面板 */
   const showDAGProgress = useMemo(() => {
     if (isUser) return false;
@@ -40,6 +47,22 @@ export default function MessageBubble({
       queryStatus === 'analyzing_intent' || queryStatus === 'generating_sql';
     return isAnalyzing && currentDag !== null;
   }, [isUser, queryStatus, currentDag]);
+
+  /** 从消息数据中提取 RCA 报告（如果存在） */
+  const messageRcaReport = useMemo((): RCAReport | null => {
+    if (isUser) return null;
+    // 检查消息是否携带了 RCA 分析结果
+    const rawData = message.data as Record<string, unknown> | undefined;
+    if (!rawData) return null;
+    // 如果消息数据中包含 rca_report 字段，则视为 RCA 分析结果
+    if ('rca_report' in rawData && rawData.rca_report) {
+      return rawData.rca_report as RCAReport;
+    }
+    return null;
+  }, [isUser, message.data]);
+
+  /** 需要渲染的 RCA 报告（优先使用 store 中的，否则使用消息中的） */
+  const displayRcaReport = rcaReport ?? messageRcaReport;
 
   /** 查询结果表格列（从 data 数组推导） */
   const tableColumns = useMemo(() => {
@@ -157,6 +180,22 @@ export default function MessageBubble({
                   </div>
                 )}
               </div>
+            )}
+
+            {/* RCA 根因分析结果展示 */}
+            {rcaLoading && (
+              <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />
+                <span className="text-xs text-gray-500">正在执行根因分析...</span>
+              </div>
+            )}
+            {rcaError && (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+                <p className="text-xs text-red-600">根因分析失败：{rcaError}</p>
+              </div>
+            )}
+            {displayRcaReport && (
+              <RCAReportView report={displayRcaReport} />
             )}
 
             {/* 查询结果表格（Phase1 简化版：最多 5 行） */}

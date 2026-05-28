@@ -1038,4 +1038,164 @@ export const handlers = [
   http.get('*/api/v1/sandbox/health', () => {
     return HttpResponse.json({ available: true });
   }),
+
+  // -------------------- RCA 根因分析 --------------------
+
+  /** POST /api/v1/rca/analyze -- 返回模拟的 RCA 分析结果 */
+  http.post('/api/v1/rca/analyze', async ({ request }) => {
+    const body = (await request.json()) as {
+      question?: string;
+      metric_name?: string;
+    };
+
+    const analysisId = `rca-${Date.now()}`;
+
+    const report = {
+      analysis_id: analysisId,
+      question: body.question ?? '分析营收异常原因',
+      anomaly: {
+        metric_name: body.metric_name ?? 'GMV',
+        current_value: 892345.0,
+        baseline_value: 1234567.0,
+        change_percent: -27.7,
+        is_anomaly: true,
+        anomaly_type: 'drop' as const,
+        confidence: 0.92,
+        direction: 'down' as const,
+      },
+      drill_downs: [
+        {
+          dimension_name: '地区',
+          values: [
+            { value: '华东', current: 345678.0, baseline: 456789.0, change: -111111.0, change_percent: -24.3, contribution: -111111.0, contribution_percent: -32.7 },
+            { value: '华南', current: 234567.0, baseline: 389012.0, change: -154445.0, change_percent: -39.7, contribution: -154445.0, contribution_percent: -45.5 },
+            { value: '华北', current: 178901.0, baseline: 212456.0, change: -33555.0, change_percent: -15.8, contribution: -33555.0, contribution_percent: -9.9 },
+            { value: '华中', current: 89012.0, baseline: 112345.0, change: -23333.0, change_percent: -20.8, contribution: -23333.0, contribution_percent: -6.9 },
+            { value: '西南', current: 44187.0, baseline: 63965.0, change: -19778.0, change_percent: -30.9, contribution: -19778.0, contribution_percent: -5.8 },
+          ],
+          top_contributors: [
+            { value: '华南', current: 234567.0, baseline: 389012.0, change: -154445.0, change_percent: -39.7, contribution: -154445.0, contribution_percent: -45.5 },
+            { value: '华东', current: 345678.0, baseline: 456789.0, change: -111111.0, change_percent: -24.3, contribution: -111111.0, contribution_percent: -32.7 },
+            { value: '华北', current: 178901.0, baseline: 212456.0, change: -33555.0, change_percent: -15.8, contribution: -33555.0, contribution_percent: -9.9 },
+          ],
+        },
+        {
+          dimension_name: '商品类别',
+          values: [
+            { value: '电子产品', current: 423456.0, baseline: 567890.0, change: -144434.0, change_percent: -25.4, contribution: -144434.0, contribution_percent: -42.6 },
+            { value: '服装鞋帽', current: 198765.0, baseline: 345678.0, change: -146913.0, change_percent: -42.5, contribution: -146913.0, contribution_percent: -43.3 },
+            { value: '食品饮料', current: 156789.0, baseline: 178901.0, change: -22112.0, change_percent: -12.4, contribution: -22112.0, contribution_percent: -6.5 },
+            { value: '家居用品', current: 78012.0, baseline: 89012.0, change: -11000.0, change_percent: -12.4, contribution: -11000.0, contribution_percent: -3.2 },
+            { value: '美妆个护', current: 35323.0, baseline: 53086.0, change: -17763.0, change_percent: -33.5, contribution: -17763.0, contribution_percent: -5.2 },
+          ],
+          top_contributors: [
+            { value: '服装鞋帽', current: 198765.0, baseline: 345678.0, change: -146913.0, change_percent: -42.5, contribution: -146913.0, contribution_percent: -43.3 },
+            { value: '电子产品', current: 423456.0, baseline: 567890.0, change: -144434.0, change_percent: -25.4, contribution: -144434.0, contribution_percent: -42.6 },
+            { value: '食品饮料', current: 156789.0, baseline: 178901.0, change: -22112.0, change_percent: -12.4, contribution: -22112.0, contribution_percent: -6.5 },
+          ],
+        },
+      ],
+      attribution: {
+        total_change: -342222.0,
+        total_change_percent: -27.7,
+        dimensions: [
+          { dimension: '地区', contribution: -342222.0, contribution_percent: -100.0 },
+          { dimension: '商品类别', contribution: -342222.0, contribution_percent: -100.0 },
+        ],
+        key_drivers: [
+          '华南地区销售额大幅下降 (-39.7%)',
+          '服装鞋帽品类订单量骤减 (-42.5%)',
+          '电子产品客单价下降 (-25.4%)',
+        ],
+      },
+      summary:
+        '本期 GMV 较基线下降 27.7%，主要受华南地区和服装鞋帽品类拖累。华南地区销售额同比下降 39.7%，是最大负面贡献因素；服装鞋帽品类订单量骤减 42.5%，与季节性促销结束及竞品活动有关。建议关注华南区域运营策略调整，并评估服装品类营销投入效果。',
+      confidence: 0.92,
+      execution_time_ms: 3250,
+    };
+
+    return HttpResponse.json(
+      {
+        analysis_id: analysisId,
+        report,
+        execution_time_ms: 3250,
+      },
+      { delay: 2000 },
+    );
+  }),
+
+  /** GET /api/v1/rca/:analysisId/result -- 返回模拟的 RCA 结果 */
+  http.get('/api/v1/rca/:analysisId/result', ({ params }) => {
+    const analysisId = params.analysisId as string;
+
+    const report = {
+      analysis_id: analysisId,
+      question: '分析营收异常原因',
+      anomaly: {
+        metric_name: 'GMV',
+        current_value: 892345.0,
+        baseline_value: 1234567.0,
+        change_percent: -27.7,
+        is_anomaly: true,
+        anomaly_type: 'drop' as const,
+        confidence: 0.92,
+        direction: 'down' as const,
+      },
+      drill_downs: [
+        {
+          dimension_name: '地区',
+          values: [
+            { value: '华东', current: 345678.0, baseline: 456789.0, change: -111111.0, change_percent: -24.3, contribution: -111111.0, contribution_percent: -32.7 },
+            { value: '华南', current: 234567.0, baseline: 389012.0, change: -154445.0, change_percent: -39.7, contribution: -154445.0, contribution_percent: -45.5 },
+          ],
+          top_contributors: [
+            { value: '华南', current: 234567.0, baseline: 389012.0, change: -154445.0, change_percent: -39.7, contribution: -154445.0, contribution_percent: -45.5 },
+          ],
+        },
+      ],
+      attribution: {
+        total_change: -342222.0,
+        total_change_percent: -27.7,
+        dimensions: [
+          { dimension: '地区', contribution: -342222.0, contribution_percent: -100.0 },
+        ],
+        key_drivers: [
+          '华南地区销售额大幅下降 (-39.7%)',
+          '服装鞋帽品类订单量骤减 (-42.5%)',
+        ],
+      },
+      summary: '本期 GMV 较基线下降 27.7%，主要受华南地区拖累。',
+      confidence: 0.92,
+      execution_time_ms: 3250,
+    };
+
+    return HttpResponse.json(report);
+  }),
+
+  /** GET /api/v1/rca/history -- 返回模拟的 RCA 分析历史 */
+  http.get('/api/v1/rca/history', () => {
+    return HttpResponse.json([
+      {
+        analysis_id: 'rca-history-001',
+        question: '为什么本月营收下降了？',
+        metric_name: 'GMV',
+        anomaly_detected: true,
+        change_percent: -27.7,
+      },
+      {
+        analysis_id: 'rca-history-002',
+        question: '用户活跃度是否有异常波动？',
+        metric_name: 'DAU',
+        anomaly_detected: false,
+        change_percent: 2.3,
+      },
+      {
+        analysis_id: 'rca-history-003',
+        question: '上周订单量突然增长的原因？',
+        metric_name: '订单量',
+        anomaly_detected: true,
+        change_percent: 45.6,
+      },
+    ]);
+  }),
 ];

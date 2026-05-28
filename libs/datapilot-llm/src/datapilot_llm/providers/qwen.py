@@ -15,7 +15,7 @@ from typing import Any
 
 import structlog
 
-from datapilot_llm.client import LLMError, LLMResponse as ClientResponse, OpenAICompatibleClient
+from datapilot_llm.client import LLMError, OpenAICompatibleClient
 from datapilot_llm.config import LLMSettings
 from datapilot_llm.provider import BaseProvider, LLMChunk, LLMResponse
 
