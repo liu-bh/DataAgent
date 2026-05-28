@@ -9,18 +9,25 @@ interface AuthState {
   user: User | null;
   /** 是否正在加载 */
   isLoading: boolean;
+  /** 新手引导是否已完成 */
+  onboardingCompleted: boolean;
   /** 登录 */
   login: (request: LoginRequest) => Promise<void>;
   /** 登出 */
   logout: () => void;
   /** 获取当前用户信息 */
   fetchMe: () => Promise<void>;
+  /** 设置新手引导完成状态 */
+  setOnboardingCompleted: (completed: boolean) => void;
+  /** 从 localStorage 读取新手引导状态 */
+  checkOnboarding: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   token: localStorage.getItem('datapilot_token'),
   user: null,
   isLoading: false,
+  onboardingCompleted: localStorage.getItem('datapilot_onboarding_completed') === 'true',
 
   login: async (request) => {
     set({ isLoading: true });
@@ -58,5 +65,19 @@ export const useAuthStore = create<AuthState>((set) => ({
       localStorage.removeItem('datapilot_token');
       set({ token: null, user: null });
     }
+  },
+
+  setOnboardingCompleted: (completed: boolean) => {
+    if (completed) {
+      localStorage.setItem('datapilot_onboarding_completed', 'true');
+    } else {
+      localStorage.removeItem('datapilot_onboarding_completed');
+    }
+    set({ onboardingCompleted: completed });
+  },
+
+  checkOnboarding: () => {
+    const completed = localStorage.getItem('datapilot_onboarding_completed') === 'true';
+    set({ onboardingCompleted: completed });
   },
 }));

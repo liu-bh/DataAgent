@@ -4,8 +4,17 @@ import type {
   SendMessageRequest,
   QueryStatusType,
   ExecuteResponse,
+  QueryHistoryItem,
+  StarredQuery,
 } from '@/types/api';
 import { apiClient } from '@/api/client';
+import {
+  fetchQueryHistory as apiFetchQueryHistory,
+  clearHistory as apiClearHistory,
+  fetchStarredQueries as apiFetchStarredQueries,
+  starQuery as apiStarQuery,
+  unstarQuery as apiUnstarQuery,
+} from '@/api/history';
 
 interface ChatState {
   /** 当前会话的消息列表 */
@@ -16,6 +25,12 @@ interface ChatState {
   queryStatus: QueryStatusType;
   /** 查询失败时的错误信息 */
   queryError: string;
+  /** 查询历史列表 */
+  queryHistory: QueryHistoryItem[];
+  /** 收藏查询列表 */
+  starredQueries: StarredQuery[];
+  /** 多轮上下文消息（最近 20 条） */
+  contextMessages: ChatMessage[];
   /** 发送消息并获取 AI 回复 */
   sendMessage: (request: SendMessageRequest) => Promise<void>;
   /** 清空消息列表 */
@@ -38,6 +53,16 @@ interface ChatState {
     rating: 'thumbs_up' | 'thumbs_down',
     comment?: string,
   ) => Promise<void>;
+  /** 获取查询历史 */
+  fetchHistory: (sessionId?: string) => Promise<void>;
+  /** 切换收藏状态 */
+  toggleStar: (messageId: string) => Promise<void>;
+  /** 获取收藏列表 */
+  fetchStarred: () => Promise<void>;
+  /** 一键复用收藏查询（将问题填入输入框） */
+  reuseQuery: (question: string) => void;
+  /** 更新上下文消息（保留最近 20 条） */
+  updateContextMessages: () => void;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -45,6 +70,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
   isLoading: false,
   queryStatus: 'idle' as QueryStatusType,
   queryError: '',
+  queryHistory: [],
+  starredQueries: [],
+  contextMessages: [],
 
   sendMessage: async (request) => {
     // 先添加用户消息
@@ -210,5 +238,71 @@ export const useChatStore = create<ChatState>((set, get) => ({
     } catch {
       // 反馈提交失败静默处理，不影响用户体验
     }
+  },
+
+  fetchHistory: async (sessionId?: string) => {
+    try {
+      const data = await apiFetchQueryHistory({
+        session_id: sessionId,
+        page: 1,
+        page_size: 50,
+      });
+      set({ queryHistory: data.items });
+    } catch {
+      // 查询历史加载失败静默处理
+    }
+  },
+
+  toggleStar: async (messageId: string) => {
+    const { queryHistory, starredQueries } = get();
+    const isCurrentlyStarred =
+      starredQueries.some((q) => q.id === messageId) ||
+      queryHistory.some((h) => h.id === messageId && h.is_starred);
+
+    // 乐观更新：立即更新本地状态
+    set((state) => ({
+      queryHistory: state.queryHistory.map((h) =>
+        h.id === messageId ? { ...h, is_starred: !h.is_starred } : h,
+      ),
+      starredQueries: isCurrentlyStarred
+        ? state.starredQueries.filter((q) => q.id !== messageId)
+        : state.starredQueries,
+    }));
+
+    try {
+      if (isCurrentlyStarred) {
+        await apiUnstarQuery(messageId);
+      } else {
+        await apiStarQuery(messageId);
+      }
+    } catch {
+      // 失败时回滚乐观更新
+      set((state) => ({
+        queryHistory: state.queryHistory.map((h) =>
+          h.id === messageId ? { ...h, is_starred: !h.is_starred } : h,
+        ),
+      }));
+    }
+  },
+
+  fetchStarred: async () => {
+    try {
+      const data = await apiFetchStarredQueries();
+      set({ starredQueries: data });
+    } catch {
+      // 收藏列表加载失败静默处理
+    }
+  },
+
+  reuseQuery: (_question: string) => {
+    // 由 Chat 页面组件监听此 action，将问题填入输入框
+    // 这里仅作为触发点，实际逻辑由使用方实现
+  },
+
+  updateContextMessages: () => {
+    const { messages } = get();
+    // 保留最近 20 条消息作为多轮上下文（约 10 轮对话）
+    const contextSlice = messages.slice(-20);
+    set({ contextMessages: contextSlice });
   },
 }));

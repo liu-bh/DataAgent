@@ -4,6 +4,8 @@ import type {
   User,
   Session,
   ChatMessage,
+  QueryHistoryItem,
+  StarredQuery,
 } from '@/types/api';
 
 // ==================== Mock 数据 ====================
@@ -101,6 +103,62 @@ const MOCK_MESSAGES: Record<string, ChatMessage[]> = {
     },
   ],
 };
+
+const MOCK_QUERY_HISTORY: QueryHistoryItem[] = [
+  {
+    id: 'msg-002',
+    session_id: 'session-001',
+    question: '上个月的总营收是多少？',
+    sql: "SELECT SUM(amount) AS total_revenue FROM orders WHERE order_date >= '2026-04-01' AND order_date < '2026-05-01'",
+    result_summary: '总营收为 1,234,567 元，同比增长 12.5%',
+    created_at: '2026-05-27T14:30:00+08:00',
+    is_starred: true,
+  },
+  {
+    id: 'msg-004',
+    session_id: 'session-002',
+    question: '最近 7 天的新增用户数趋势',
+    sql: "SELECT DATE(created_at) AS date, COUNT(*) AS new_users FROM users WHERE created_at >= CURRENT_DATE - INTERVAL 7 DAY GROUP BY DATE(created_at) ORDER BY date",
+    result_summary: '最近 7 天新增用户总计 2,340 人，日均新增 334 人',
+    created_at: '2026-05-27T11:00:00+08:00',
+    is_starred: false,
+  },
+  {
+    id: 'msg-005',
+    session_id: 'session-001',
+    question: '哪个产品类别的订单量最多？',
+    sql: 'SELECT p.category, COUNT(*) AS order_count FROM orders o JOIN products p ON o.product_id = p.id GROUP BY p.category ORDER BY order_count DESC LIMIT 10',
+    result_summary: '电子产品类别订单量最多，共计 5,678 单',
+    created_at: '2026-05-26T16:20:00+08:00',
+    is_starred: false,
+  },
+  {
+    id: 'msg-006',
+    session_id: 'session-002',
+    question: '本月各地区的销售排名',
+    sql: "SELECT u.region, SUM(o.amount) AS revenue FROM orders o LEFT JOIN users u ON o.user_id = u.id WHERE o.created_at >= '2026-05-01' GROUP BY u.region ORDER BY revenue DESC",
+    result_summary: '华东地区以 456,789 元位居第一',
+    created_at: '2026-05-25T09:30:00+08:00',
+    is_starred: true,
+  },
+];
+
+const MOCK_STARRED_QUERIES: StarredQuery[] = [
+  {
+    id: 'msg-002',
+    question: '上个月的总营收是多少？',
+    sql: "SELECT SUM(amount) AS total_revenue FROM orders WHERE order_date >= '2026-04-01' AND order_date < '2026-05-01'",
+    starred_at: '2026-05-27T15:00:00+08:00',
+    session_id: 'session-001',
+  },
+  {
+    id: 'msg-006',
+    question: '本月各地区的销售排名',
+    sql: "SELECT u.region, SUM(o.amount) AS revenue FROM orders o LEFT JOIN users u ON o.user_id = u.id WHERE o.created_at >= '2026-05-01' GROUP BY u.region ORDER BY revenue DESC",
+    starred_at: '2026-05-26T10:00:00+08:00',
+    session_id: 'session-002',
+  },
+];
 
 // ==================== Handlers ====================
 
@@ -212,34 +270,84 @@ export const handlers = [
     let aiResponse: ChatMessage;
 
     if (isDataQuery) {
-      // 数据查询意图：返回完整的 SQL + 数据结果
-      aiResponse = {
-        id: `msg-ai-${Date.now()}`,
-        role: 'assistant',
-        content:
-          '根据查询结果，上个月各地区的销售额如下：华东地区以 456,789 元位居第一，华南地区紧随其后。总体同比增长 12.5%，表现良好。',
-        sql: "SELECT u.region, SUM(o.amount) AS revenue, COUNT(DISTINCT o.id) AS order_count FROM orders o LEFT JOIN users u ON o.user_id = u.id WHERE o.created_at >= '2026-04-01' AND o.created_at < '2026-05-01' GROUP BY u.region ORDER BY revenue DESC LIMIT 100",
-        sql_dialect: 'mysql',
-        sql_explanation:
-          '这个查询统计了上个月（2026年4月）各地区的销售额和订单数。通过 orders 表和 users 表联表查询，按地区分组并按销售额降序排列。',
-        chart_spec: {
-          chartType: 'bar',
-          xAxis: 'region',
-          yAxis: 'revenue',
-        },
-        freshness_note: '数据截至 2026-05-25 23:59',
-        data_cutoff: '2026-05-25T23:59:00+08:00',
-        total_rows: 8,
-        has_more: false,
-        data: [
-          { region: '华东', revenue: 456789.0, order_count: 1234 },
-          { region: '华南', revenue: 389012.5, order_count: 987 },
-          { region: '华北', revenue: 312456.8, order_count: 856 },
-          { region: '华中', revenue: 234567.3, order_count: 678 },
-          { region: '西南', revenue: 178901.2, order_count: 456 },
-        ],
-        created_at: new Date().toISOString(),
-      };
+      // 时间趋势类查询 -> 折线图数据（date 列 + 数值列）
+      if (/趋势|每天|每日|周|月/.test(userContent)) {
+        aiResponse = {
+          id: `msg-ai-${Date.now()}`,
+          role: 'assistant',
+          content: '最近 7 天的用户注册趋势和营收走势如下，整体呈上升趋势。日均新增 378 人，日均营收约 183,693 元。',
+          sql: "SELECT DATE(created_at) AS date, COUNT(*) AS new_users, SUM(amount) AS revenue FROM orders WHERE created_at >= '2026-05-01' GROUP BY DATE(created_at) ORDER BY date",
+          sql_dialect: 'mysql',
+          sql_explanation: '统计最近 7 天每天的新增用户数和营收总额，按日期分组并排序。',
+          chart_spec: { chartType: 'line', xAxis: 'date', yAxis: 'revenue' },
+          freshness_note: '数据截至 2026-05-27 23:59',
+          data_cutoff: '2026-05-27T23:59:00+08:00',
+          total_rows: 7,
+          has_more: false,
+          data: [
+            { date: '2026-05-21', new_users: 280, revenue: 152340.0 },
+            { date: '2026-05-22', new_users: 310, revenue: 167890.0 },
+            { date: '2026-05-23', new_users: 295, revenue: 148920.0 },
+            { date: '2026-05-24', new_users: 420, revenue: 215600.0 },
+            { date: '2026-05-25', new_users: 385, revenue: 198400.0 },
+            { date: '2026-05-26', new_users: 450, revenue: 234500.0 },
+            { date: '2026-05-27', new_users: 510, revenue: 267800.0 },
+          ],
+          created_at: new Date().toISOString(),
+        };
+      } else if (/占比|比例|分布|分类/.test(userContent)) {
+        // 少维度查询 -> 饼图数据（单维度 + 单数值列）
+        aiResponse = {
+          id: `msg-ai-${Date.now()}`,
+          role: 'assistant',
+          content: '各产品类别的订单量分布如下：电子产品占比最高（38.7%），其次是服装鞋帽（27.5%）。',
+          sql: "SELECT category, COUNT(*) AS order_count FROM orders WHERE created_at >= '2026-04-01' GROUP BY category ORDER BY order_count DESC",
+          sql_dialect: 'mysql',
+          sql_explanation: '统计各产品类别的订单数量，按订单量降序排列。',
+          chart_spec: { chartType: 'pie', xAxis: 'category', yAxis: 'order_count' },
+          freshness_note: '数据截至 2026-05-25 23:59',
+          data_cutoff: '2026-05-25T23:59:00+08:00',
+          total_rows: 5,
+          has_more: false,
+          data: [
+            { category: '电子产品', order_count: 4520 },
+            { category: '服装鞋帽', order_count: 3210 },
+            { category: '食品饮料', order_count: 2780 },
+            { category: '家居用品', order_count: 1950 },
+            { category: '美妆个护', order_count: 1640 },
+          ],
+          created_at: new Date().toISOString(),
+        };
+      } else {
+        // 默认地区类查询 -> 柱状图数据（维度列 + 多数值列）
+        aiResponse = {
+          id: `msg-ai-${Date.now()}`,
+          role: 'assistant',
+          content:
+            '根据查询结果，上个月各地区的销售额如下：华东地区以 456,789 元位居第一，华南地区紧随其后。总体同比增长 12.5%，表现良好。',
+          sql: "SELECT u.region, SUM(o.amount) AS revenue, COUNT(DISTINCT o.id) AS order_count FROM orders o LEFT JOIN users u ON o.user_id = u.id WHERE o.created_at >= '2026-04-01' AND o.created_at < '2026-05-01' GROUP BY u.region ORDER BY revenue DESC LIMIT 100",
+          sql_dialect: 'mysql',
+          sql_explanation:
+            '这个查询统计了上个月（2026年4月）各地区的销售额和订单数。通过 orders 表和 users 表联表查询，按地区分组并按销售额降序排列。',
+          chart_spec: {
+            chartType: 'bar',
+            xAxis: 'region',
+            yAxis: 'revenue',
+          },
+          freshness_note: '数据截至 2026-05-25 23:59',
+          data_cutoff: '2026-05-25T23:59:00+08:00',
+          total_rows: 8,
+          has_more: false,
+          data: [
+            { region: '华东', revenue: 456789.0, order_count: 1234 },
+            { region: '华南', revenue: 389012.5, order_count: 987 },
+            { region: '华北', revenue: 312456.8, order_count: 856 },
+            { region: '华中', revenue: 234567.3, order_count: 678 },
+            { region: '西南', revenue: 178901.2, order_count: 456 },
+          ],
+          created_at: new Date().toISOString(),
+        };
+      }
     } else {
       // 闲聊意图：仅返回文本，不返回 SQL
       aiResponse = {
@@ -463,16 +571,55 @@ export const handlers = [
   // -------------------- 端到端执行 / 重执行 / 反馈 --------------------
 
   http.post('/api/v1/chat/execute', async ({ request }) => {
-    const body = (await request.json()) as { question: string };
-    const userContent = body.question.toLowerCase();
+    const body = (await request.json()) as Record<string, unknown>;
+    const question = String(body.question ?? '').toLowerCase();
 
     // 判断是否为数据查询意图
     const isDataQuery =
       /营收|销售额|订单|用户|增长|趋势|统计|多少|哪个|排行|排名|总计|合计|平均|地区|分类|产品|库存|数量|金额|上月|本周|最近|top/.test(
-        userContent,
+        question,
       );
 
     if (isDataQuery) {
+      // 时间趋势类查询 -> 折线图数据（date 列 + 数值列）
+      if (/趋势|每天|每日|周|月/.test(question)) {
+        const trendResponse = {
+          sql: "SELECT DATE(created_at) AS date, COUNT(*) AS new_users, SUM(amount) AS revenue FROM orders WHERE created_at >= '2026-05-01' GROUP BY DATE(created_at) ORDER BY date",
+          explanation: '最近 7 天的用户注册趋势和营收走势如下，整体呈上升趋势。',
+          confidence: 0.94,
+          columns: ['date', 'new_users', 'revenue'],
+          data: [
+            { date: '2026-05-21', new_users: 280, revenue: 152340.0 },
+            { date: '2026-05-22', new_users: 310, revenue: 167890.0 },
+            { date: '2026-05-23', new_users: 295, revenue: 148920.0 },
+            { date: '2026-05-24', new_users: 420, revenue: 215600.0 },
+            { date: '2026-05-25', new_users: 385, revenue: 198400.0 },
+            { date: '2026-05-26', new_users: 450, revenue: 234500.0 },
+            { date: '2026-05-27', new_users: 510, revenue: 267800.0 },
+          ],
+        };
+        return HttpResponse.json(trendResponse, { delay: 1500 });
+      }
+
+      // 少维度查询 -> 饼图数据（单维度 + 单数值列，<=8 行）
+      if (/占比|比例|分布|分类/.test(question)) {
+        const pieResponse = {
+          sql: "SELECT category, COUNT(*) AS order_count FROM orders WHERE created_at >= '2026-04-01' GROUP BY category ORDER BY order_count DESC",
+          explanation: '各产品类别的订单量分布如下：电子产品占比最高。',
+          confidence: 0.91,
+          columns: ['category', 'order_count'],
+          data: [
+            { category: '电子产品', order_count: 4520 },
+            { category: '服装鞋帽', order_count: 3210 },
+            { category: '食品饮料', order_count: 2780 },
+            { category: '家居用品', order_count: 1950 },
+            { category: '美妆个护', order_count: 1640 },
+          ],
+        };
+        return HttpResponse.json(pieResponse, { delay: 1500 });
+      }
+
+      // 默认地区类查询 -> 柱状图数据（维度列 + 多数值列）
       const executeResponse = {
         sql: "SELECT u.region, SUM(o.amount) AS revenue, COUNT(DISTINCT o.id) AS order_count FROM orders o LEFT JOIN users u ON o.user_id = u.id WHERE o.created_at >= '2026-04-01' AND o.created_at < '2026-05-01' GROUP BY u.region ORDER BY revenue DESC LIMIT 100",
         explanation:
@@ -521,6 +668,73 @@ export const handlers = [
   }),
 
   http.post('/api/v1/chat/feedback', async () => {
+    return HttpResponse.json({ status: 'ok' }, { delay: 200 });
+  }),
+
+  // -------------------- 查询历史 & 收藏 --------------------
+
+  /** 获取查询历史 */
+  http.get('/api/v1/query/history', ({ request }) => {
+    const url = new URL(request.url);
+    const sessionId = url.searchParams.get('session_id');
+
+    let items = [...MOCK_QUERY_HISTORY];
+    if (sessionId) {
+      items = items.filter((h) => h.session_id === sessionId);
+    }
+
+    return HttpResponse.json({
+      items,
+      total: items.length,
+      page: 1,
+      page_size: 50,
+    });
+  }),
+
+  /** 清空查询历史 */
+  http.delete('/api/v1/query/history', () => {
+    return HttpResponse.json({ status: 'ok' }, { delay: 300 });
+  }),
+
+  /** 获取收藏查询列表 */
+  http.get('/api/v1/query/starred', () => {
+    return HttpResponse.json({ data: MOCK_STARRED_QUERIES });
+  }),
+
+  /** 收藏查询 */
+  http.post('/api/v1/query/star/:message_id', ({ params }) => {
+    const messageId = params.message_id;
+    // 更新历史中的收藏状态
+    const item = MOCK_QUERY_HISTORY.find((h) => h.id === messageId);
+    if (item) {
+      item.is_starred = true;
+    }
+    // 如果不在收藏列表中，添加进去
+    if (!MOCK_STARRED_QUERIES.find((q) => q.id === messageId) && item) {
+      MOCK_STARRED_QUERIES.unshift({
+        id: item.id,
+        question: item.question,
+        sql: item.sql,
+        starred_at: new Date().toISOString(),
+        session_id: item.session_id,
+      });
+    }
+    return HttpResponse.json({ status: 'ok' }, { delay: 200 });
+  }),
+
+  /** 取消收藏查询 */
+  http.delete('/api/v1/query/star/:message_id', ({ params }) => {
+    const messageId = params.message_id;
+    // 更新历史中的收藏状态
+    const item = MOCK_QUERY_HISTORY.find((h) => h.id === messageId);
+    if (item) {
+      item.is_starred = false;
+    }
+    // 从收藏列表中移除
+    const idx = MOCK_STARRED_QUERIES.findIndex((q) => q.id === messageId);
+    if (idx !== -1) {
+      MOCK_STARRED_QUERIES.splice(idx, 1);
+    }
     return HttpResponse.json({ status: 'ok' }, { delay: 200 });
   }),
 ];

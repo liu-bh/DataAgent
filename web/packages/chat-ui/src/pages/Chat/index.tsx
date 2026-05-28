@@ -8,6 +8,9 @@ import MessageBubble from '@/components/MessageBubble';
 import QueryStatus from '@/components/QueryStatus';
 import ChatInput from '@/components/ChatInput';
 import Loading from '@/components/Loading';
+import EmptyState from '@/components/EmptyState';
+import OnboardingGuide from '@/components/OnboardingGuide';
+import ErrorFriendly from '@/components/ErrorFriendly';
 
 export default function Chat() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -29,6 +32,9 @@ export default function Chat() {
   const updateAssistantSql = useChatStore((s) => s.updateAssistantSql);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const onboardingCompleted = useAuthStore((s) => s.onboardingCompleted);
+  const setOnboardingCompleted = useAuthStore((s) => s.setOnboardingCompleted);
 
   // 未登录则跳转登录页
   useEffect(() => {
@@ -98,6 +104,44 @@ export default function Chat() {
     }
   };
 
+  /** 新手引导完成回调 */
+  const handleOnboardingComplete = () => {
+    setOnboardingCompleted(true);
+  };
+
+  /** 新手引导发送示例查询 */
+  const handleOnboardingSendExample = (question: string) => {
+    setOnboardingCompleted(true);
+    handleSend(question);
+  };
+
+  /** 根据消息内容判断错误类型 */
+  const getErrorType = (msg: typeof messages[0]):
+    | 'no_match'
+    | 'timeout'
+    | 'out_of_scope'
+    | 'quota_exceeded'
+    | 'unknown'
+    | null => {
+    if (msg.role !== 'assistant' || msg.content !== '抱歉，处理您的请求时出现了错误，请稍后重试。') {
+      return null;
+    }
+    const error = msg.sql_error?.toLowerCase() ?? '';
+    if (error.includes('no_match') || error.includes('未找到') || error.includes('not found')) {
+      return 'no_match';
+    }
+    if (error.includes('timeout') || error.includes('超时')) {
+      return 'timeout';
+    }
+    if (error.includes('out_of_scope') || error.includes('超出范围')) {
+      return 'out_of_scope';
+    }
+    if (error.includes('quota') || error.includes('配额') || error.includes('上限')) {
+      return 'quota_exceeded';
+    }
+    return 'unknown';
+  };
+
   // 未认证时不渲染主内容
   if (!token) {
     return <Loading fullScreen />;
@@ -142,41 +186,41 @@ export default function Chat() {
         </header>
 
         {/* 消息列表区域 */}
-        <div className="flex-1 overflow-y-auto px-4 py-6">
+        <div className="relative flex-1 overflow-y-auto px-4 py-6">
           <div className="mx-auto max-w-3xl">
             {messages.length === 0 && !isLoading ? (
               /* 空状态 */
-              <div className="flex h-full flex-col items-center justify-center py-20">
-                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-50">
-                  <svg
-                    className="h-8 w-8 text-primary-500"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="mb-1 text-lg font-medium text-gray-900">
-                  开始新的对话
-                </h3>
-                <p className="text-sm text-gray-500">
-                  输入您的问题，DataPilot 将为您查询数据并生成可视化图表
-                </p>
-              </div>
+              <>
+                <EmptyState onSendExample={handleSend} />
+                {/* 首次登录时显示新手引导（覆盖在空状态上方） */}
+                {!onboardingCompleted && (
+                  <OnboardingGuide
+                    onComplete={handleOnboardingComplete}
+                    onSendExample={handleOnboardingSendExample}
+                  />
+                )}
+              </>
             ) : (
-              messages.map((msg) => (
-                <MessageBubble
-                  key={msg.id}
-                  message={msg}
-                  onEditSql={handleEditSql}
-                />
-              ))
+              messages.map((msg) => {
+                const errorType = getErrorType(msg);
+                return (
+                  <div key={msg.id}>
+                    {errorType ? (
+                      <ErrorFriendly
+                        errorType={errorType}
+                        errorMessage={msg.sql_error}
+                        onRetry={handleRetry}
+                        onSuggest={handleSend}
+                      />
+                    ) : (
+                      <MessageBubble
+                        message={msg}
+                        onEditSql={handleEditSql}
+                      />
+                    )}
+                  </div>
+                );
+              })
             )}
 
             {/* 查询状态指示器 */}

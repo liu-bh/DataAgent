@@ -8,6 +8,12 @@ import type {
   Dimension,
   SearchResponse,
 } from '@/types/semantic';
+import type {
+  MetricOverview,
+  TrendDataPoint,
+  TopMetricItem,
+  QueryDistribution,
+} from '@/types/dashboard';
 
 // ==================== Mock 数据 ====================
 
@@ -719,5 +725,74 @@ export const handlers = [
     };
 
     return HttpResponse.json(searchResponse);
+  }),
+
+  // ==================== 大盘概览 API ====================
+
+  http.get('/api/v1/admin/dashboard/overview', () => {
+    const overview: MetricOverview = {
+      dau: 1286,
+      dau_trend: 12.5,
+      total_queries: 38420,
+      queries_trend: 8.3,
+      avg_accuracy: 87.6,
+      accuracy_trend: 3.2,
+      edit_rate: 15.2,
+      edit_rate_trend: -2.1,
+      satisfaction_rate: 92.1,
+      satisfaction_trend: 5.4,
+    };
+    return HttpResponse.json({ data: overview });
+  }),
+
+  http.get('/api/v1/admin/dashboard/trend', ({ request }) => {
+    const url = new URL(request.url);
+    const days = parseInt(url.searchParams.get('days') ?? '30', 10);
+
+    /** 生成模拟趋势数据 */
+    const trendData: TrendDataPoint[] = Array.from({ length: days }, (_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (days - 1 - i));
+      const dateStr = date.toISOString().slice(0, 10);
+      // 模拟：工作日查询多，周末少
+      const dayOfWeek = date.getDay();
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      const baseQueries = isWeekend ? 600 : 1200;
+      const queries = Math.round(baseQueries + Math.random() * 400 - 100);
+      const accuracy = +(80 + Math.random() * 15).toFixed(1);
+      const errors = Math.round(Math.random() * 20 + (isWeekend ? 2 : 5));
+      return { date: dateStr, queries, accuracy, errors };
+    });
+
+    return HttpResponse.json({ data: trendData });
+  }),
+
+  http.get('/api/v1/admin/dashboard/top-metrics', ({ request }) => {
+    const url = new URL(request.url);
+    const limit = parseInt(url.searchParams.get('limit') ?? '10', 10);
+
+    const topMetrics: TopMetricItem[] = [
+      { metric_name: 'GMV', query_count: 5820, success_rate: 94.2, avg_latency_ms: 156 },
+      { metric_name: '订单量', query_count: 4560, success_rate: 96.8, avg_latency_ms: 120 },
+      { metric_name: '客单价', query_count: 3240, success_rate: 91.5, avg_latency_ms: 189 },
+      { metric_name: '日活用户数', query_count: 2980, success_rate: 93.7, avg_latency_ms: 210 },
+      { metric_name: '订单转化率', query_count: 2650, success_rate: 88.3, avg_latency_ms: 245 },
+      { metric_name: '7日留存率', query_count: 1890, success_rate: 85.1, avg_latency_ms: 320 },
+      { metric_name: '支付成功率', query_count: 1560, success_rate: 97.5, avg_latency_ms: 98 },
+      { metric_name: '退货率', query_count: 1230, success_rate: 90.2, avg_latency_ms: 175 },
+      { metric_name: '用户增长率', query_count: 980, success_rate: 82.6, avg_latency_ms: 280 },
+      { metric_name: '平均响应时间', query_count: 750, success_rate: 78.9, avg_latency_ms: 410 },
+    ];
+
+    return HttpResponse.json({ data: topMetrics.slice(0, limit) });
+  }),
+
+  http.get('/api/v1/admin/dashboard/distribution', () => {
+    const distribution: QueryDistribution[] = [
+      { type: 'sql_query', count: 28500, percentage: 74.2 },
+      { type: 'chitchat', count: 6540, percentage: 17.0 },
+      { type: 'out_of_scope', count: 3380, percentage: 8.8 },
+    ];
+    return HttpResponse.json({ data: distribution });
   }),
 ];

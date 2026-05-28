@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import type { ChatMessage } from '@/types/api';
 import SqlPanel from '@/components/SqlPanel';
 import SqlExplanation from '@/components/SqlExplanation';
+import ChartPanel from '@/components/ChartPanel';
 
 interface MessageBubbleProps {
   message: ChatMessage;
@@ -140,28 +141,12 @@ export default function MessageBubble({
               </div>
             )}
 
-            {/* 图表占位（Phase5 完善） */}
-            {message.chart_spec && (
-              <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-6 text-center">
-                <svg
-                  className="mx-auto mb-2 h-8 w-8 text-gray-300"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={1}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                  />
-                </svg>
-                <p className="text-xs text-gray-400">
-                  {message.chart_spec.chartType === 'table'
-                    ? '表格视图'
-                    : '图表将在后续版本中展示'}
-                </p>
-              </div>
+            {/* 图表面板：当消息包含查询结果数据时自动渲染 */}
+            {message.data && message.data.length > 0 && tableColumns.length > 0 && (
+              <ChartPanel
+                columns={tableColumns}
+                rows={message.data}
+              />
             )}
           </div>
         )}

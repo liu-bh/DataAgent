@@ -205,3 +205,33 @@ export interface FeedbackRequest {
   edited_sql?: string;
   comment?: string;
 }
+
+// ==================== 查询历史 & 收藏 ====================
+
+/** 查询历史条目 */
+export interface QueryHistoryItem {
+  id: string;
+  session_id: string;
+  question: string;
+  sql: string;
+  result_summary: string;
+  created_at: string;
+  is_starred: boolean;
+}
+
+/** 收藏查询 */
+export interface StarredQuery {
+  id: string;
+  question: string;
+  sql: string;
+  starred_at: string;
+  session_id: string;
+}
+
+/** 查询历史分页响应 */
+export interface HistoryResponse {
+  items: QueryHistoryItem[];
+  total: number;
+  page: number;
+  page_size: number;
+}

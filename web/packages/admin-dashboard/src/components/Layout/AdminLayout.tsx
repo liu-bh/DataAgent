@@ -5,6 +5,8 @@ import Header from './Header';
 /** 路径到页面标题的映射 */
 const PAGE_TITLES: Record<string, string> = {
   '/admin': '管理后台',
+  '/admin/dashboard': '大盘概览',
+  '/admin/analytics': '查询分析',
   '/admin/data-sources': '数据源管理',
   '/admin/semantic-models': '语义模型管理',
   '/admin/semantic-models/create': '创建语义模型',

@@ -3,6 +3,8 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import AdminLayout from '@/components/Layout/AdminLayout';
 
 /** 懒加载页面组件 */
+const DashboardPage = lazy(() => import('@/pages/Dashboard'));
+const AnalyticsPage = lazy(() => import('@/pages/Analytics'));
 const DataSourcesPage = lazy(() => import('@/pages/DataSources'));
 const SemanticModelsPage = lazy(() => import('@/pages/SemanticModels'));
 const SemanticModelDetailPage = lazy(() => import('@/pages/SemanticModels/DetailPage'));
@@ -17,7 +19,15 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <Navigate to="/admin/data-sources" replace />,
+        element: <Navigate to="/admin/dashboard" replace />,
+      },
+      {
+        path: 'dashboard',
+        element: <DashboardPage />,
+      },
+      {
+        path: 'analytics',
+        element: <AnalyticsPage />,
       },
       {
         path: 'data-sources',
