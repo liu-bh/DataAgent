@@ -7,15 +7,12 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
-from uuid import UUID
 
 from sqlalchemy import CheckConstraint, DateTime, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from datapilot_common.database import Base, TenantBase
-
 
 # 允许的业务域枚举值
 VALID_DOMAINS = ("电商", "运营", "财务", "通用")
@@ -38,17 +35,17 @@ class SemanticModel(TenantBase, Base):
     )
 
     # --- 关联 ---
-    metrics: Mapped[list["Metric"]] = relationship(  # noqa: F821
+    metrics: Mapped[list[Metric]] = relationship(  # noqa: F821
         "Metric",
         back_populates="semantic_model",
         lazy="noload",
     )
-    dimensions: Mapped[list["Dimension"]] = relationship(  # noqa: F821
+    dimensions: Mapped[list[Dimension]] = relationship(  # noqa: F821
         "Dimension",
         back_populates="semantic_model",
         lazy="noload",
     )
-    table_relationships: Mapped[list["TableRelationship"]] = relationship(  # noqa: F821
+    table_relationships: Mapped[list[TableRelationship]] = relationship(  # noqa: F821
         "TableRelationship",
         back_populates="semantic_model",
         lazy="noload",
@@ -60,7 +57,7 @@ class SemanticModel(TenantBase, Base):
         nullable=False,
         comment="业务语义视图名称",
     )
-    description: Mapped[Optional[str]] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         comment="视图描述",
@@ -76,7 +73,7 @@ class SemanticModel(TenantBase, Base):
         default=list,
         comment="关联的数据源 ID 数组",
     )
-    deleted_at: Mapped[Optional[datetime]] = mapped_column(
+    deleted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
         comment="软删除时间，NULL 表示未删除",

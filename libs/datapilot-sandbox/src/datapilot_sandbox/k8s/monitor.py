@@ -6,9 +6,11 @@
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from datapilot_sandbox.k8s.pool import PodPool, PoolStats
+if TYPE_CHECKING:
+    from datapilot_sandbox.k8s.pool import PodPool, PoolStats
 
 
 @dataclass

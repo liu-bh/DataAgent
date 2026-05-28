@@ -145,9 +145,7 @@ class ChartTypeInferrer:
             scores[ChartType.BAR] = max(scores.get(ChartType.BAR, 0), 90)
             # 少量维度 -> pie（文本列的唯一值数量少于等于行数的一定比例时）
             if text_count == 1 and rows:
-                text_col = next(
-                    (c for c, t in col_types.items() if t == _ColumnType.TEXT), None
-                )
+                text_col = next((c for c, t in col_types.items() if t == _ColumnType.TEXT), None)
                 if text_col:
                     unique_vals = set(col_values[text_col])
                     if 2 <= len(unique_vals) <= min(8, len(rows)):

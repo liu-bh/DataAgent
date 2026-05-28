@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from datapilot_tools.models import ToolDefinition, ToolParameter
+if TYPE_CHECKING:
+    from datapilot_tools.models import ToolDefinition, ToolParameter
 
 
 class ToolParameterValidator:
@@ -24,9 +25,8 @@ class ToolParameterValidator:
 
         # 校验必填参数
         for param in tool.parameters:
-            if param.required and param.name not in params:
-                if param.default is None:
-                    errors.append(f"缺少必填参数: {param.name}")
+            if param.required and param.name not in params and param.default is None:
+                errors.append(f"缺少必填参数: {param.name}")
 
         # 校验每个传入的参数
         for name, value in params.items():
@@ -48,9 +48,7 @@ class ToolParameterValidator:
                 return param
         return None
 
-    def _validate_type(
-        self, param: ToolParameter, value: Any, errors: list[str]
-    ) -> None:
+    def _validate_type(self, param: ToolParameter, value: Any, errors: list[str]) -> None:
         """校验参数类型。"""
         type_map: dict[str, type | tuple[type, ...]] = {
             "string": str,
@@ -71,26 +69,16 @@ class ToolParameterValidator:
                 f"参数 '{param.name}' 类型错误: 期望 {param.type}, 实际 {type(value).__name__}"
             )
 
-    def _validate_enum(
-        self, param: ToolParameter, value: Any, errors: list[str]
-    ) -> None:
+    def _validate_enum(self, param: ToolParameter, value: Any, errors: list[str]) -> None:
         """校验枚举值。"""
         if param.enum is not None and value not in param.enum:
-            errors.append(
-                f"参数 '{param.name}' 值 '{value}' 不在允许的枚举列表中: {param.enum}"
-            )
+            errors.append(f"参数 '{param.name}' 值 '{value}' 不在允许的枚举列表中: {param.enum}")
 
-    def _validate_range(
-        self, param: ToolParameter, value: Any, errors: list[str]
-    ) -> None:
+    def _validate_range(self, param: ToolParameter, value: Any, errors: list[str]) -> None:
         """校验数值范围。"""
         if not isinstance(value, (int, float)):
             return
         if param.minimum is not None and value < param.minimum:
-            errors.append(
-                f"参数 '{param.name}' 值 {value} 小于最小值 {param.minimum}"
-            )
+            errors.append(f"参数 '{param.name}' 值 {value} 小于最小值 {param.minimum}")
         if param.maximum is not None and value > param.maximum:
-            errors.append(
-                f"参数 '{param.name}' 值 {value} 大于最大值 {param.maximum}"
-            )
+            errors.append(f"参数 '{param.name}' 值 {value} 大于最大值 {param.maximum}")

@@ -70,6 +70,7 @@ class DAGraph:
     def generate_id() -> str:
         """生成唯一 DAG ID。"""
         import uuid
+
         return f"dag-{uuid.uuid4().hex[:12]}"
 
     # ------------------------------------------------------------------
@@ -83,9 +84,7 @@ class DAGraph:
     def remove_node(self, node_id: str) -> None:
         """移除节点及其关联的所有边。"""
         self.nodes.pop(node_id, None)
-        self.edges = [
-            e for e in self.edges if e.source_id != node_id and e.target_id != node_id
-        ]
+        self.edges = [e for e in self.edges if e.source_id != node_id and e.target_id != node_id]
 
     # ------------------------------------------------------------------
     # 边操作
@@ -98,8 +97,7 @@ class DAGraph:
     def remove_edge(self, source_id: str, target_id: str) -> None:
         """移除指定边。"""
         self.edges = [
-            e for e in self.edges
-            if not (e.source_id == source_id and e.target_id == target_id)
+            e for e in self.edges if not (e.source_id == source_id and e.target_id == target_id)
         ]
 
     # ------------------------------------------------------------------
@@ -149,11 +147,7 @@ class DAGraph:
             color[node_id] = BLACK
             return False
 
-        for nid in self.nodes:
-            if color[nid] == WHITE:
-                if _dfs(nid):
-                    return True
-        return False
+        return any(color[nid] == WHITE and _dfs(nid) for nid in self.nodes)
 
     def topological_sort(self) -> list[list[str]]:
         """拓扑排序，返回并行分组。

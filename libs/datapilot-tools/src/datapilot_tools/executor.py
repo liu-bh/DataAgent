@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from datapilot_tools.models import ToolDefinition, ToolExecutionResult
 from datapilot_tools.validator import ToolParameterValidator
+
+if TYPE_CHECKING:
+    from datapilot_tools.models import ToolDefinition, ToolExecutionResult
 
 
 class BaseToolExecutor(ABC):

@@ -104,29 +104,21 @@ class SemanticResolver:
         warnings: list[str] = list(semantic_context.warnings)
 
         # 1. 解析时间条件
-        time_condition = self._resolve_time_condition(
-            parsed_intent.time_range, semantic_context
-        )
+        time_condition = self._resolve_time_condition(parsed_intent.time_range, semantic_context)
         if time_condition and self._is_using_default_time_column(semantic_context):
             warnings.append("未在语义上下文中找到时间维度，使用默认列 created_at")
 
         # 2. 解析过滤条件
-        resolved_filters = self._resolve_filters(
-            parsed_intent.filters, semantic_context
-        )
+        resolved_filters = self._resolve_filters(parsed_intent.filters, semantic_context)
 
         # 3. 解析聚合
-        aggregations = self._resolve_aggregations(
-            parsed_intent, semantic_context
-        )
+        aggregations = self._resolve_aggregations(parsed_intent, semantic_context)
 
         # 4. 解析排序
         resolved_sort = self._resolve_sort(parsed_intent, semantic_context)
 
         # 5. 确定 SELECT 列
-        select_columns = self._resolve_select_columns(
-            parsed_intent, semantic_context, aggregations
-        )
+        select_columns = self._resolve_select_columns(parsed_intent, semantic_context, aggregations)
 
         # 6. 确定 GROUP BY
         group_by = self._resolve_group_by(parsed_intent, semantic_context, aggregations)
@@ -476,10 +468,7 @@ class SemanticResolver:
     def _resolve_query_type(parsed_intent: ParsedIntent) -> QueryType:
         """确定最终查询类型。"""
         # 如果有聚合，且查询类型为 DETAIL，调整为 AGGREGATION
-        if (
-            parsed_intent.query_type == QueryType.DETAIL
-            and parsed_intent.target_metrics
-        ):
+        if parsed_intent.query_type == QueryType.DETAIL and parsed_intent.target_metrics:
             # 检查问题中是否有聚合关键词
             question = parsed_intent.raw_question.lower()
             agg_kw = ["总计", "合计", "汇总", "平均", "总量", "总共"]

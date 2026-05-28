@@ -65,7 +65,7 @@ class SQLDryRunner:
         """使用数据库连接执行 EXPLAIN 检查。"""
         try:
             from sqlalchemy import text
-            from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+            from sqlalchemy.ext.asyncio import create_async_engine
 
             engine = create_async_engine(self._connection_url)
             checked_tables: list[str] = []
@@ -87,9 +87,7 @@ class SQLDryRunner:
                             continue
                         try:
                             await conn.execute(
-                                text(
-                                    f"SELECT 1 FROM {_quote_identifier(table, dialect)} LIMIT 0"
-                                )
+                                text(f"SELECT 1 FROM {_quote_identifier(table, dialect)} LIMIT 0")
                             )
                         except Exception as exc:  # noqa: BLE001
                             warnings.append(f"表 '{table}' 可能不存在: {exc}")

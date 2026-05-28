@@ -6,9 +6,12 @@ Phase1 使用内存存储，生产环境可替换为 Redis/PostgreSQL 实现。
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import structlog
 
-from datapilot_agent.rca.models import RCAReport
+if TYPE_CHECKING:
+    from datapilot_agent.rca.models import RCAReport
 
 logger = structlog.get_logger(__name__)
 

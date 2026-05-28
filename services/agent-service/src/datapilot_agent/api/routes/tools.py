@@ -6,15 +6,10 @@
 from __future__ import annotations
 
 import time
-from typing import TYPE_CHECKING
 
 import structlog
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
-
-if TYPE_CHECKING:
-    # Track A 依赖：延迟导入，避免运行时依赖
-    pass
 
 logger = structlog.get_logger(__name__)
 
@@ -89,7 +84,12 @@ def _init_builtin_tools() -> None:
             category="python",
             parameters=[
                 {"name": "code", "type": "string", "description": "Python 代码", "required": True},
-                {"name": "timeout", "type": "integer", "description": "超时时间（秒）", "required": False},
+                {
+                    "name": "timeout",
+                    "type": "integer",
+                    "description": "超时时间（秒）",
+                    "required": False,
+                },
             ],
             version="1.0.0",
         ),
@@ -99,7 +99,12 @@ def _init_builtin_tools() -> None:
             category="analysis",
             parameters=[
                 {"name": "question", "type": "string", "description": "分析问题", "required": True},
-                {"name": "metric_name", "type": "string", "description": "指标名称", "required": True},
+                {
+                    "name": "metric_name",
+                    "type": "string",
+                    "description": "指标名称",
+                    "required": True,
+                },
             ],
             version="1.0.0",
         ),
@@ -117,7 +122,12 @@ def _init_builtin_tools() -> None:
             description="数据源健康检查",
             category="system",
             parameters=[
-                {"name": "datasource_id", "type": "string", "description": "数据源 ID", "required": True},
+                {
+                    "name": "datasource_id",
+                    "type": "string",
+                    "description": "数据源 ID",
+                    "required": True,
+                },
             ],
             version="1.0.0",
         ),

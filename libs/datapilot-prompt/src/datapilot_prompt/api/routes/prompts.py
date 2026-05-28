@@ -12,19 +12,23 @@
 
 from __future__ import annotations
 
-from uuid import UUID
+from typing import TYPE_CHECKING
 
 import structlog
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...schemas import (
+    ABTestResults,
+    PromptActivateResponse,
     PromptCreate,
     PromptResponse,
-    PromptActivateResponse,
-    ABTestResults,
 )
 from ...service import PromptManager
+
+if TYPE_CHECKING:
+    from uuid import UUID
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = structlog.get_logger(__name__)
 
@@ -38,8 +42,7 @@ def _get_db_session() -> AsyncSession:
     此处为独立运行时的占位实现。
     """
     raise NotImplementedError(
-        "请通过 FastAPI 依赖注入提供 AsyncSession。"
-        "示例: Depends(get_db_session)"
+        "请通过 FastAPI 依赖注入提供 AsyncSession。示例: Depends(get_db_session)"
     )
 
 

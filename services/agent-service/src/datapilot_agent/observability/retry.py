@@ -7,9 +7,12 @@ from __future__ import annotations
 
 import asyncio
 import random
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any
 
 import structlog
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 logger = structlog.get_logger(__name__)
 
@@ -102,7 +105,7 @@ class RetryExecutor:
         Returns:
             等待时间（秒）。
         """
-        delay = self._base_delay * (self._exponential_base ** attempt)
+        delay = self._base_delay * (self._exponential_base**attempt)
         if self._jitter:
             delay += random.uniform(0, self._base_delay)
         return min(delay, self._max_delay)

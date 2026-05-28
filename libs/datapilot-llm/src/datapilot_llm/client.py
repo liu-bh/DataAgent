@@ -435,7 +435,6 @@ class AsyncStreamIterator:
 
     def _extract_chunk(self, data: dict[str, Any]) -> dict[str, Any] | None:
         """从 SSE 数据中提取增量内容。"""
-        from datapilot_llm.provider import LLMChunk
 
         if not data.get("choices"):
             # 可能是 usage 统计信息

@@ -1,7 +1,7 @@
 """JWT 工具模块：Token 创建与验证。"""
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from jose import JWTError, jwt
 
@@ -30,7 +30,7 @@ def create_access_token(
     if expires_delta is None:
         expires_delta = timedelta(minutes=settings.access_token_expire_minutes)
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     payload = {
         "sub": str(user_id),
         "tenant_id": str(tenant_id),
@@ -58,7 +58,7 @@ def create_refresh_token(
     if expires_delta is None:
         expires_delta = timedelta(days=settings.refresh_token_expire_days)
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     payload = {
         "sub": str(user_id),
         "tenant_id": str(tenant_id),
@@ -90,7 +90,7 @@ def decode_token(token: str) -> dict:
             algorithms=[settings.jwt_algorithm],
         )
         return payload
-    except jwt.ExpiredSignatureError:
-        raise TokenExpiredError()
-    except JWTError:
-        raise AuthenticationError("无效的 Token")
+    except jwt.ExpiredSignatureError as err:
+        raise TokenExpiredError() from err
+    except JWTError as err:
+        raise AuthenticationError("无效的 Token") from err

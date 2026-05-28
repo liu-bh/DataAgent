@@ -10,10 +10,10 @@ from typing import TYPE_CHECKING
 
 import structlog
 
-from ..generator.models import FewShotExample
-
 if TYPE_CHECKING:
     from datapilot_prompt.budget import TokenBudgetManager
+
+    from ..generator.models import FewShotExample
 
 logger = structlog.get_logger(__name__)
 
@@ -126,7 +126,6 @@ class FewShotMatcher:
         """
         if self._examples_store_fn is not None:
             # 调用外部存储函数
-            import asyncio
             fn = self._examples_store_fn  # type: ignore[assignment]
             candidates = await fn(tenant_id, domain)
             return candidates
@@ -161,12 +160,10 @@ class FewShotMatcher:
 
             query_vec = await embedding_fn(question)
             candidate_texts = [ex.question for ex in candidates]
-            candidate_vecs = await asyncio.gather(
-                *[embedding_fn(text) for text in candidate_texts]
-            )
+            candidate_vecs = await asyncio.gather(*[embedding_fn(text) for text in candidate_texts])
             scores = await similarity_fn(query_vec, list(candidate_vecs))
 
-            for ex, score in zip(candidates, scores):
+            for ex, score in zip(candidates, scores, strict=False):
                 ex.similarity_score = float(score)
 
             return candidates

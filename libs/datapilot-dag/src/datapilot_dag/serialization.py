@@ -51,7 +51,7 @@ class DAGSerializer:
 
         # 反序列化节点
         nodes_data = data.get("nodes", {})
-        for node_id, node_data in nodes_data.items():
+        for _node_id, node_data in nodes_data.items():
             node = DAGNode(
                 node_id=node_data["node_id"],
                 task_type=TaskType(node_data["task_type"]),

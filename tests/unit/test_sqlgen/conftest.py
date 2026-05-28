@@ -132,12 +132,13 @@ def mock_budget_manager() -> MagicMock:
 @pytest.fixture
 def mock_llm_router() -> MagicMock:
     """创建 mock LLM Router。"""
+    from datapilot_llm.provider import LLMResponse
+
     router = MagicMock()
-    router.generate = AsyncMock(return_value={
-        "content": '{"sql": "SELECT COUNT(*) FROM orders", "explanation": "统计订单数量", "confidence": 0.9}',
-        "explanation": "统计订单数量",
-        "confidence": 0.9,
-    })
+    router.generate = AsyncMock(return_value=LLMResponse(
+        content='{"sql": "SELECT COUNT(*) FROM orders", "explanation": "统计订单数量", "confidence": 0.9}',
+        model="mock-model",
+    ))
     return router
 
 

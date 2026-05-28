@@ -244,9 +244,7 @@ class SQLInterpreter:
             # 检查聚合函数
             if isinstance(expr, (exp.Sum, exp.Count, exp.Avg, exp.Min, exp.Max)):
                 info.has_aggregation = True
-            for _agg_node in expr.find_all(
-                (exp.Sum, exp.Count, exp.Avg, exp.Min, exp.Max)
-            ):
+            for _agg_node in expr.find_all((exp.Sum, exp.Count, exp.Avg, exp.Min, exp.Max)):
                 info.has_aggregation = True
 
         # 限制显示的列数量
@@ -272,9 +270,7 @@ class SQLInterpreter:
             elif hasattr(join_table_ref, "this"):
                 inner = join_table_ref.this
                 join_table_name = (
-                    inner.alias_or_name
-                    if hasattr(inner, "alias_or_name")
-                    else str(inner)
+                    inner.alias_or_name if hasattr(inner, "alias_or_name") else str(inner)
                 )
             else:
                 join_table_name = str(join_table_ref)

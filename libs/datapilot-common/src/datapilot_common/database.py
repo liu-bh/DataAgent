@@ -29,10 +29,11 @@ from sqlalchemy import DateTime, String, func
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
+)
+from sqlalchemy.ext.asyncio import (
     create_async_engine as sa_create_async_engine,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
 
 # ---------------------------------------------------------------------------
 # Base 声明式基类
@@ -125,7 +126,9 @@ def create_async_engine(
     )
 
 
-def async_session_maker(engine: Any, *, expire_on_commit: bool = False) -> async_sessionmaker[AsyncSession]:
+def async_session_maker(
+    engine: Any, *, expire_on_commit: bool = False
+) -> async_sessionmaker[AsyncSession]:
     """创建 async_sessionmaker 工厂。
 
     Args:

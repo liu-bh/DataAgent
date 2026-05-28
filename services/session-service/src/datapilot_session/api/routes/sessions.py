@@ -1,7 +1,7 @@
 """会话 CRUD 路由。"""
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Header, Query
 from sqlalchemy import func, select
@@ -10,7 +10,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from datapilot_session.config import settings
 from datapilot_session.database import get_db
 from datapilot_session.exceptions import (
-    AppError,
     AuthenticationError,
     NotFoundError,
 )
@@ -33,7 +32,6 @@ async def get_current_user_id(
 
     TODO: 生产环境应通过 datapilot-common 统一解析 JWT
     """
-    import json
     from jose import JWTError, jwt
 
     # 临时 JWT 配置
@@ -46,8 +44,8 @@ async def get_current_user_id(
     try:
         payload = jwt.decode(token, jwt_secret, algorithms=["HS256"])
         return uuid.UUID(payload["sub"])
-    except (JWTError, KeyError, ValueError):
-        raise AuthenticationError("无效的 Token")
+    except (JWTError, KeyError, ValueError) as exc:
+        raise AuthenticationError("无效的 Token") from exc
 
 
 def _get_jwt_secret() -> str:
@@ -72,9 +70,13 @@ async def list_sessions(
 ) -> SessionListResponse:
     """获取会话列表（分页）。"""
     # 查询总数
-    count_stmt = select(func.count()).select_from(Session).where(
-        Session.user_id == user_id,
-        Session.is_archived.is_(False),
+    count_stmt = (
+        select(func.count())
+        .select_from(Session)
+        .where(
+            Session.user_id == user_id,
+            Session.is_archived.is_(False),
+        )
     )
     total = (await db.execute(count_stmt)).scalar() or 0
 
@@ -118,7 +120,7 @@ async def create_session(
         tenant_id=uuid.UUID("00000000-0000-0000-0000-000000000000"),  # TODO: 从 JWT 获取
         user_id=user_id,
         title=body.title or "新会话",
-        expires_at=datetime.now(timezone.utc) + timedelta(minutes=settings.session_expire_minutes),
+        expires_at=datetime.now(UTC) + timedelta(minutes=settings.session_expire_minutes),
     )
     db.add(session)
     await db.flush()
@@ -214,11 +216,7 @@ async def get_messages(
         raise NotFoundError("会话")
 
     # 查询消息
-    msg_stmt = (
-        select(Message)
-        .where(Message.session_id == session_id)
-        .order_by(Message.created_at)
-    )
+    msg_stmt = select(Message).where(Message.session_id == session_id).order_by(Message.created_at)
     msg_result = await db.execute(msg_stmt)
     messages = msg_result.scalars().all()
 

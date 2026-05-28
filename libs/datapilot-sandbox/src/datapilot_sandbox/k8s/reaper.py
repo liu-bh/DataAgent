@@ -9,10 +9,14 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import time
+from typing import TYPE_CHECKING
 
 from datapilot_sandbox.k8s.lifecycle import PodState
-from datapilot_sandbox.k8s.pool import PodPool
+
+if TYPE_CHECKING:
+    from datapilot_sandbox.k8s.pool import PodPool
 
 
 class PodReaper:
@@ -63,10 +67,8 @@ class PodReaper:
         self._running = False
         if self._task is not None and not self._task.done():
             self._task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._task
-            except asyncio.CancelledError:
-                pass
         self._task = None
 
     async def _cleanup_loop(self) -> None:

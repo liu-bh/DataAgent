@@ -265,9 +265,7 @@ class SemanticContext(BaseModel):
 
     selected_tables: list[str] = Field(default_factory=list, description="选中的源表名")
     selected_metrics: list[LinkedMetric] = Field(default_factory=list, description="关联指标")
-    selected_dimensions: list[LinkedDimension] = Field(
-        default_factory=list, description="关联维度"
-    )
+    selected_dimensions: list[LinkedDimension] = Field(default_factory=list, description="关联维度")
     join_path: list[JoinStep] = Field(default_factory=list, description="JOIN 路径")
     semantic_model_id: str | None = Field(default=None, description="语义模型 ID")
     semantic_model_name: str | None = Field(default=None, description="语义模型名称")
@@ -375,12 +373,8 @@ class ResolvedQuery(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     select_columns: list[str] = Field(default_factory=list, description="SELECT 列")
-    aggregations: list[ResolvedAggregation] = Field(
-        default_factory=list, description="聚合信息"
-    )
-    time_condition: ResolvedTimeCondition | None = Field(
-        default=None, description="时间条件"
-    )
+    aggregations: list[ResolvedAggregation] = Field(default_factory=list, description="聚合信息")
+    time_condition: ResolvedTimeCondition | None = Field(default=None, description="时间条件")
     filters: list[ResolvedFilter] = Field(default_factory=list, description="过滤条件")
     sort_by: list[ResolvedSort] = Field(default_factory=list, description="排序信息")
     group_by: list[str] = Field(default_factory=list, description="GROUP BY 列")

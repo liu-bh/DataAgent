@@ -24,13 +24,14 @@ from .models import (
     NL2SQLResult,
     SemanticContext,
 )
-from .prompt_builder import PromptBuilder
-from .postprocess import SQLPostProcessor
 
 if TYPE_CHECKING:
-    from datapilot_sqlgen.intent.router import IntentRouter
     from datapilot_sqlgen.intent.parser import IntentParser
+    from datapilot_sqlgen.intent.router import IntentRouter
     from datapilot_sqlgen.intent.schema_linker import SchemaLinker
+
+    from .postprocess import SQLPostProcessor
+    from .prompt_builder import PromptBuilder
 
 logger = structlog.get_logger(__name__)
 
@@ -224,10 +225,32 @@ class NL2SQLPipeline:
 
         # 数据查询关键词
         sql_keywords = (
-            "多少", "统计", "排名", "趋势", "查询", "搜索", "多少条",
-            "top", "最高", "最低", "总计", "汇总", "平均", "比例",
-            "占比", "环比", "同比", "增长", "下降", "列出", "展示",
-            "查看", "分析", "对比", "分布", "计数",
+            "多少",
+            "统计",
+            "排名",
+            "趋势",
+            "查询",
+            "搜索",
+            "多少条",
+            "top",
+            "最高",
+            "最低",
+            "总计",
+            "汇总",
+            "平均",
+            "比例",
+            "占比",
+            "环比",
+            "同比",
+            "增长",
+            "下降",
+            "列出",
+            "展示",
+            "查看",
+            "分析",
+            "对比",
+            "分布",
+            "计数",
         )
         for kw in sql_keywords:
             if kw in question:
@@ -258,6 +281,7 @@ class NL2SQLPipeline:
 
         # 降级：返回一个空的 ParsedIntent
         from datapilot_sqlgen.intent.types import ParsedIntent
+
         return ParsedIntent(raw_question=question)
 
     def _step_schema_link_and_resolve(
@@ -316,7 +340,6 @@ class NL2SQLPipeline:
             丰富后的 generator 层 SemanticContext。
         """
         from datapilot_sqlgen.generator.models import (
-            ColumnInfo,
             DimensionInfo,
             MetricInfo,
             TableInfo,
@@ -337,37 +360,42 @@ class NL2SQLPipeline:
         metrics = list(base_ctx.metrics)
         for metric in intent_ctx.selected_metrics:
             if not any(m.name == metric.name for m in metrics):
-                metrics.append(MetricInfo(
-                    name=metric.name,
-                    calculation=metric.calculation,
-                    unit=metric.unit or "",
-                ))
+                metrics.append(
+                    MetricInfo(
+                        name=metric.name,
+                        calculation=metric.calculation,
+                        unit=metric.unit or "",
+                    )
+                )
 
         # 从 intent 层提取维度
         dimensions = list(base_ctx.dimensions)
         for dim in intent_ctx.selected_dimensions:
             if not any(d.name == dim.name for d in dimensions):
-                dimensions.append(DimensionInfo(
-                    name=dim.name,
-                    column_name=dim.column_name,
-                    table_name=dim.table_name or "",
-                    synonyms=dim.synonyms,
-                ))
+                dimensions.append(
+                    DimensionInfo(
+                        name=dim.name,
+                        column_name=dim.column_name,
+                        table_name=dim.table_name or "",
+                        synonyms=dim.synonyms,
+                    )
+                )
 
         # 从 intent 层提取 JOIN 路径
         relationships = list(base_ctx.relationships)
         for join_step in intent_ctx.join_path:
             if not any(
-                r.left_table == join_step.left_table
-                and r.right_table == join_step.right_table
+                r.left_table == join_step.left_table and r.right_table == join_step.right_table
                 for r in relationships
             ):
-                relationships.append(TableRelationship(
-                    left_table=join_step.left_table,
-                    right_table=join_step.right_table,
-                    join_condition=join_step.join_condition,
-                    join_type=join_step.join_type,
-                ))
+                relationships.append(
+                    TableRelationship(
+                        left_table=join_step.left_table,
+                        right_table=join_step.right_table,
+                        join_condition=join_step.join_condition,
+                        join_type=join_step.join_type,
+                    )
+                )
 
         return SemanticContext(
             tables=tables,
@@ -443,14 +471,16 @@ class NL2SQLPipeline:
         if self._llm_router is not None:
             try:
                 # 通过 LLM 路由器调用（JSON mode）
+                from datapilot_llm.router import Scene
+
                 result = await self._llm_router.generate(
+                    scene=Scene.NL2SQL,
                     prompt=prompt,
-                    response_format="json",
-                    tenant_id=tenant_id,
+                    json_mode=True,
                 )
-                output = result.get("content", "")
-                explanation = result.get("explanation", "")
-                confidence = float(result.get("confidence", 0.8))
+                output = result.content
+                explanation = ""
+                confidence = 0.8
                 return output, explanation, confidence
             except Exception as e:
                 logger.warning("LLM 调用失败", error=str(e))
@@ -471,9 +501,13 @@ class NL2SQLPipeline:
             占位 JSON 输出。
         """
         import json
+
         sql = "SELECT 1 LIMIT 1"
-        return json.dumps({
-            "sql": sql,
-            "explanation": "占位查询（LLM 未配置）",
-            "confidence": 0.0,
-        }, ensure_ascii=False)
+        return json.dumps(
+            {
+                "sql": sql,
+                "explanation": "占位查询（LLM 未配置）",
+                "confidence": 0.0,
+            },
+            ensure_ascii=False,
+        )

@@ -7,13 +7,14 @@
 
 from __future__ import annotations
 
-import json
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import structlog
 
 from datapilot_semantic.retrieval.cache import CachedSearchResult, SemanticCache
-from datapilot_semantic.retrieval.hybrid_search import HybridSearcher, SearchHit
+
+if TYPE_CHECKING:
+    from datapilot_semantic.retrieval.hybrid_search import HybridSearcher, SearchHit
 
 logger = structlog.get_logger(__name__)
 
@@ -129,13 +130,15 @@ class RetrievalService:
         # 将 dict 转为 CachedSearchResult
         cached_results: list[CachedSearchResult] = []
         for item in result:
-            cached_results.append(CachedSearchResult(
-                entity_type=item.get("entity_type", ""),
-                entity_id=item.get("entity_id", ""),
-                score=float(item.get("score", 0.0)),
-                entity_name=item.get("entity_name"),
-                entity_description=item.get("entity_description"),
-            ))
+            cached_results.append(
+                CachedSearchResult(
+                    entity_type=item.get("entity_type", ""),
+                    entity_id=item.get("entity_id", ""),
+                    score=float(item.get("score", 0.0)),
+                    entity_name=item.get("entity_name"),
+                    entity_description=item.get("entity_description"),
+                )
+            )
 
         success = await self._cache.set_cached_results(
             f"{tenant_id}:{query}",

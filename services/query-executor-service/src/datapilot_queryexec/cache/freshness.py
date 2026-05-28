@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import structlog
 
@@ -57,22 +57,26 @@ class FreshnessChecker:
     """
 
     # 已知实时数据源类型
-    _REALTIME_DATASOURCES: frozenset[str] = frozenset({
-        "mysql",
-        "postgresql",
-        "clickhouse",
-        "oracle",
-        "sqlserver",
-    })
+    _REALTIME_DATASOURCES: frozenset[str] = frozenset(
+        {
+            "mysql",
+            "postgresql",
+            "clickhouse",
+            "oracle",
+            "sqlserver",
+        }
+    )
 
     # 已知离线数据源类型（至少 T+1）
-    _DAILY_DATASOURCES: frozenset[str] = frozenset({
-        "hive",
-        "presto",
-        "trino_offline",
-        "maxcompute",
-        "doris_offline",
-    })
+    _DAILY_DATASOURCES: frozenset[str] = frozenset(
+        {
+            "hive",
+            "presto",
+            "trino_offline",
+            "maxcompute",
+            "doris_offline",
+        }
+    )
 
     def __init__(self) -> None:
         """初始化新鲜度检查器。"""
@@ -97,14 +101,10 @@ class FreshnessChecker:
         Returns:
             FreshnessInfo 实例，包含等级和时间信息。
         """
-        now = datetime.now(timezone.utc)
+        datetime.now(UTC)
 
-        data_cutoff_str = (
-            data_updated_at.isoformat() if data_updated_at else ""
-        )
-        cached_at_str = (
-            cached_at.isoformat() if cached_at else ""
-        )
+        data_cutoff_str = data_updated_at.isoformat() if data_updated_at else ""
+        cached_at_str = cached_at.isoformat() if cached_at else ""
 
         # 确定用于判断的时间基准
         reference_time = data_updated_at or cached_at
@@ -165,7 +165,7 @@ class FreshnessChecker:
         Returns:
             新鲜度等级字符串。
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         reference_time = data_updated_at or cached_at
 
         if reference_time is None:
@@ -173,7 +173,7 @@ class FreshnessChecker:
 
         # 确保 reference_time 是 timezone-aware
         if reference_time.tzinfo is None:
-            reference_time = reference_time.replace(tzinfo=timezone.utc)
+            reference_time = reference_time.replace(tzinfo=UTC)
 
         delta = now - reference_time
         total_seconds = delta.total_seconds()

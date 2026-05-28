@@ -13,9 +13,7 @@ from uuid import UUID
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     BigInteger,
-    Boolean,
     CheckConstraint,
-    Column,
     DateTime,
     ForeignKey,
     Index,
@@ -91,7 +89,10 @@ class DataSource(TenantBase, Base):
     )
 
     __table_args__ = (
-        CheckConstraint("type IN ('mysql','postgresql','doris','starrocks','clickhouse','api')", name="ck_data_sources_type"),
+        CheckConstraint(
+            "type IN ('mysql','postgresql','doris','starrocks','clickhouse','api')",
+            name="ck_data_sources_type",
+        ),
         CheckConstraint("status IN ('active','disabled')", name="ck_data_sources_status"),
         CheckConstraint(
             "freshness_level IS NULL OR freshness_level IN ('realtime','hourly','daily','custom')",

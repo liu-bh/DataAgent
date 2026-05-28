@@ -10,14 +10,16 @@ API 兼容 OpenAI Chat Completions 协议。
 
 from __future__ import annotations
 
-from collections.abc import AsyncGenerator
-from typing import Any
+from typing import TYPE_CHECKING
 
 import structlog
 
 from datapilot_llm.client import LLMError, OpenAICompatibleClient
 from datapilot_llm.config import LLMSettings
 from datapilot_llm.provider import BaseProvider, LLMChunk, LLMResponse
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
 
 logger = structlog.get_logger(__name__)
 

@@ -8,7 +8,7 @@ from datapilot_agent.observability.circuit_breaker import (
     CircuitOpenError,
     CircuitState,
 )
-from datapilot_agent.observability.health import HealthCheckResult, HealthChecker, HealthStatus
+from datapilot_agent.observability.health import HealthChecker, HealthCheckResult, HealthStatus
 from datapilot_agent.observability.metrics import RequestMetrics
 from datapilot_agent.observability.middleware import RequestTraceMiddleware
 from datapilot_agent.observability.retry import RetryExecutor

@@ -36,12 +36,8 @@ class RequestMetrics:
     使用线程锁保护内部计数器，支持多线程场景。
     """
 
-    _request_counts: dict[str, int] = field(
-        default_factory=lambda: defaultdict(int), repr=False
-    )
-    _error_counts: dict[str, int] = field(
-        default_factory=lambda: defaultdict(int), repr=False
-    )
+    _request_counts: dict[str, int] = field(default_factory=lambda: defaultdict(int), repr=False)
+    _error_counts: dict[str, int] = field(default_factory=lambda: defaultdict(int), repr=False)
     _latencies: dict[str, list[float]] = field(
         default_factory=lambda: defaultdict(list), repr=False
     )

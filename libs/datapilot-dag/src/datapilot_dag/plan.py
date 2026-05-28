@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from datapilot_dag.models import DAGraph
+if TYPE_CHECKING:
+    from datapilot_dag.models import DAGraph
 
 
 @dataclass
@@ -95,7 +97,7 @@ class ExecutionPlan:
             return []
 
         max_leaf = max(leaf_nodes, key=lambda nid: dist.get(nid, -1))
-        max_dist = dist.get(max_leaf, -1)
+        dist.get(max_leaf, -1)
 
         # 回溯关键路径
         path: list[str] = []

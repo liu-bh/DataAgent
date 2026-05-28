@@ -92,7 +92,6 @@ class CacheManager:
             self._evict_lru()
 
         # 创建新条目
-        import sys
 
         size_bytes = len(str(value).encode("utf-8")) if value is not None else 0
         # 对于 bytes 类型直接取长度
@@ -143,9 +142,7 @@ class CacheManager:
             return count
 
         # 按命名空间清除
-        keys_to_remove = [
-            k for k in self._store if k.namespace == namespace
-        ]
+        keys_to_remove = [k for k in self._store if k.namespace == namespace]
         for key in keys_to_remove:
             self._remove_entry(key)
         logger.info("命名空间 '%s' 缓存已清空，共 %d 条", namespace, len(keys_to_remove))
@@ -172,9 +169,7 @@ class CacheManager:
         Returns:
             被清理的条目数。
         """
-        expired_keys = [
-            key for key, entry in self._store.items() if entry.is_expired
-        ]
+        expired_keys = [key for key, entry in self._store.items() if entry.is_expired]
         for key in expired_keys:
             self._remove_entry(key)
         if expired_keys:

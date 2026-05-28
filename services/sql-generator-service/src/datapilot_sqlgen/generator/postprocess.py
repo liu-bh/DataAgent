@@ -189,6 +189,7 @@ class SQLPostProcessor:
         """
         try:
             import sqlglot
+
             return sqlglot.parse_one(sql, read=dialect)
         except Exception as e:
             logger.warning("SQL AST 解析失败", sql=sql[:100], error=str(e))
@@ -245,6 +246,7 @@ class SQLPostProcessor:
         # 没有包含 LIMIT，添加默认 LIMIT
         try:
             import sqlglot
+
             parsed = sqlglot.parse_one(sql, read=dialect)
             # 尝试添加 LIMIT
             limited = parsed.limit(self._default_limit)
@@ -284,6 +286,7 @@ class SQLPostProcessor:
         # 尝试替换第一个 SELECT *
         try:
             import sqlglot
+
             parsed = sqlglot.parse_one(sql)
 
             # 找到 SELECT *

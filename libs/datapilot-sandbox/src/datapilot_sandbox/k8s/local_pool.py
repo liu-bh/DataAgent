@@ -11,7 +11,7 @@ import uuid
 from typing import TYPE_CHECKING
 
 from datapilot_sandbox.k8s.lifecycle import PodInfo, PodLifecycle, PodState
-from datapilot_sandbox.k8s.pool import PoolStats, PodPool
+from datapilot_sandbox.k8s.pool import PodPool, PoolStats
 
 if TYPE_CHECKING:
     from datapilot_sandbox.models import SandboxConfig
@@ -107,7 +107,8 @@ class LocalPodPool(PodPool):
         """模拟预热（实际只创建空闲 Pod 记录）。"""
         # 仅统计非 TERMINATED 的 Pod
         active_pods = [
-            p for p in self._lifecycle.pods.values()
+            p
+            for p in self._lifecycle.pods.values()
             if p.state not in (PodState.TERMINATED, PodState.TERMINATING)
         ]
         actual = min(count, self._max_pods - len(active_pods))
@@ -198,7 +199,8 @@ class LocalPodPool(PodPool):
         条件：池中有至少一个非 TERMINATED 状态的 Pod。
         """
         active_pods = [
-            p for p in self._lifecycle.pods.values()
+            p
+            for p in self._lifecycle.pods.values()
             if p.state not in (PodState.TERMINATED, PodState.TERMINATING)
         ]
         return len(active_pods) > 0

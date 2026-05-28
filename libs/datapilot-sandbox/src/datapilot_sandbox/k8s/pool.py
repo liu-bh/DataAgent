@@ -8,8 +8,10 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from datapilot_sandbox.k8s.lifecycle import PodInfo
+if TYPE_CHECKING:
+    from datapilot_sandbox.k8s.lifecycle import PodInfo
 
 
 @dataclass

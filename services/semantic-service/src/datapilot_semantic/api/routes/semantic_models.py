@@ -6,17 +6,15 @@
 from __future__ import annotations
 
 import math
-from typing import Optional
+from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from datapilot_common.exceptions import NotFoundError, ValidationError
-
 from datapilot_semantic.api.dependencies import get_db
-from datapilot_semantic.models import Dimension, Metric, SemanticModel
+from datapilot_semantic.models import SemanticModel
 from datapilot_semantic.models.schemas import (
     DimensionResponse,
     MetricResponse,
@@ -26,6 +24,9 @@ from datapilot_semantic.models.schemas import (
     SemanticModelResponse,
     SemanticModelUpdate,
 )
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/api/v1/semantic-models", tags=["语义模型"])
 
@@ -71,7 +72,7 @@ async def list_semantic_models(
     session: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="页码，从 1 开始"),
     page_size: int = Query(20, ge=1, le=100, description="每页条数"),
-    domain: Optional[str] = Query(None, description="按业务域筛选"),
+    domain: str | None = Query(None, description="按业务域筛选"),
 ) -> PaginatedResponse[SemanticModelResponse]:
     """获取语义模型列表。
 

@@ -3,6 +3,7 @@
 定义 Function Calling 流程中使用的数据结构，包括工具调用请求、
 工具调用结果和执行结果。
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

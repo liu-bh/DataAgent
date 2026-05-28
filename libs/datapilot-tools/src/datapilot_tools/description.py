@@ -4,9 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from datapilot_tools.models import ToolDefinition
-
 if TYPE_CHECKING:
+    from datapilot_tools.models import ToolDefinition
     from datapilot_tools.registry import ToolRegistry
 
 

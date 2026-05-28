@@ -21,33 +21,38 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Any
-from uuid import UUID
+from typing import TYPE_CHECKING, Any
 
 import structlog
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlglot import exp
 
-from datapilot_semantic.retrieval.embedding import EmbeddingClient
-from datapilot_semantic.retrieval.vector_store import VectorSearchHit, VectorStore
+from datapilot_semantic.retrieval.vector_store import VectorStore
+
+if TYPE_CHECKING:
+    from uuid import UUID
+
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    from datapilot_semantic.retrieval.embedding import EmbeddingClient
 
 logger = structlog.get_logger(__name__)
 
-# 实体类型 → 表名映射（与 vector_store 保持一致）
+# 实体类型 -> 表名映射（与 vector_store 保持一致）
 ENTITY_TABLE_MAP: dict[str, str] = {
     "metric": "metrics",
     "dimension": "dimensions",
     "source_table": "source_tables",
 }
 
-# 实体类型 → 名称列映射
+# 实体类型 -> 名称列映射
 ENTITY_NAME_COLUMN_MAP: dict[str, str] = {
     "metric": "name",
     "dimension": "name",
     "source_table": "table_name",
 }
 
-# 实体类型 → 描述列映射
+# 实体类型 -> 描述列映射
 ENTITY_DESC_COLUMN_MAP: dict[str, str] = {
     "metric": "description",
     "dimension": "column_name",
@@ -132,9 +137,7 @@ class HybridSearcher:
         self._semantic_top_k = semantic_top_k
         self._keyword_top_k = keyword_top_k
         self._semantic_threshold = semantic_threshold
-        self._default_tenant_id = (
-            str(default_tenant_id) if default_tenant_id else None
-        )
+        self._default_tenant_id = str(default_tenant_id) if default_tenant_id else None
 
     # ------------------------------------------------------------------
     # 语义搜索（向量）
@@ -299,53 +302,148 @@ class HybridSearcher:
             "top_k": top_k,
         }
 
-        tenant_clause = ""
+        # 使用 sqlglot AST 构建租户过滤条件
+        tenant_conds: list[exp.Condition] = []
         if tenant_id is not None:
-            tenant_clause = "AND tenant_id = :tenant_id"
+            tenant_conds.append(
+                exp.EQ(
+                    this=exp.Column(this=exp.Identifier(this="tenant_id")),
+                    expression=exp.Parameter(this=exp.Identifier(this="tenant_id")),
+                )
+            )
             params["tenant_id"] = str(tenant_id)
 
-        # 构建评分表达式
-        # ts_rank: 全文检索相关度
+        # 构建评分表达式（使用 sqlglot AST）
         # ILIKE 匹配: 名称前缀匹配优先
+        ilike_case = exp.Case(
+            ifs=[
+                exp.If(
+                    this=exp.ILike(
+                        this=exp.Column(this=exp.Identifier(this=name_col)),
+                        expression=exp.Parameter(this=exp.Identifier(this="query_prefix")),
+                    ),
+                    true=exp.Literal.number(2.0),
+                ),
+                exp.If(
+                    this=exp.ILike(
+                        this=exp.Column(this=exp.Identifier(this=name_col)),
+                        expression=exp.Parameter(this=exp.Identifier(this="query")),
+                    ),
+                    true=exp.Literal.number(1.0),
+                ),
+                exp.If(
+                    this=exp.ILike(
+                        this=exp.Coalesce(
+                            this=exp.Column(this=exp.Identifier(this=desc_col)),
+                            expressions=[exp.Literal.string("")],
+                        ),
+                        expression=exp.Parameter(this=exp.Identifier(this="query")),
+                    ),
+                    true=exp.Literal.number(0.5),
+                ),
+            ],
+            default=exp.Literal.number(0.0),
+        )
+
         if tsquery:
             # 有有效 token 时使用全文检索 + ILIKE
-            score_expr = f"""
-                GREATEST(
-                    ts_rank(to_tsvector('simple', COALESCE({name_col}, '')), to_tsquery('simple', :tsquery)),
-                    CASE WHEN {name_col} ILIKE :query_prefix THEN 2.0
-                         WHEN {name_col} ILIKE :query THEN 1.0
-                         WHEN COALESCE({desc_col}, '') ILIKE :query THEN 0.5
-                         ELSE 0.0
-                    END
-                ) AS score
-            """
+            # ts_rank / to_tsvector / to_tsquery 是 PostgreSQL 函数，
+            # 通过 Anonymous 表达式嵌入 AST
+            ts_rank_expr = exp.Anonymous(
+                this="ts_rank",
+                expressions=[
+                    exp.Anonymous(
+                        this="to_tsvector",
+                        expressions=[
+                            exp.Literal.string("simple"),
+                            exp.Coalesce(
+                                this=exp.Column(this=exp.Identifier(this=name_col)),
+                                expressions=[exp.Literal.string("")],
+                            ),
+                        ],
+                    ),
+                    exp.Anonymous(
+                        this="to_tsquery",
+                        expressions=[
+                            exp.Literal.string("simple"),
+                            exp.Parameter(this=exp.Identifier(this="tsquery")),
+                        ],
+                    ),
+                ],
+            )
+            score_expr = exp.Alias(
+                this=exp.Anonymous(
+                    this="GREATEST",
+                    expressions=[ts_rank_expr, ilike_case],
+                ),
+                alias=exp.Identifier(this="score"),
+            )
             params["tsquery"] = tsquery
         else:
             # 无有效 token 时仅用 ILIKE
-            score_expr = f"""
-                CASE WHEN {name_col} ILIKE :query_prefix THEN 2.0
-                     WHEN {name_col} ILIKE :query THEN 1.0
-                     WHEN COALESCE({desc_col}, '') ILIKE :query THEN 0.5
-                     ELSE 0.0
-                END AS score
-            """
+            score_expr = exp.Alias(
+                this=ilike_case,
+                alias=exp.Identifier(this="score"),
+            )
 
-        sql = text(f"""
-            SELECT
-                id,
-                {name_col} AS name,
-                {desc_col} AS description,
-                {score_expr}
-            FROM {table_name}
-            WHERE deleted_at IS NULL
-              {tenant_clause}
-              AND (
-                  {name_col} ILIKE :query
-                  OR COALESCE({desc_col}, '') ILIKE :query
-              )
-            ORDER BY score DESC
-            LIMIT :top_k
-        """)
+        # WHERE 条件: deleted_at IS NULL [AND tenant_id = :tenant_id]
+        # AND (name_col ILIKE :query OR COALESCE(desc_col, '') ILIKE :query)
+        where_conds: list[exp.Condition] = [
+            exp.Not(
+                this=exp.Is(
+                    this=exp.Column(this=exp.Identifier(this="deleted_at")),
+                    expression=exp.Null(),
+                ),
+            ),
+            *tenant_conds,
+            exp.Or(
+                this=exp.ILike(
+                    this=exp.Column(this=exp.Identifier(this=name_col)),
+                    expression=exp.Parameter(this=exp.Identifier(this="query")),
+                ),
+                expression=exp.ILike(
+                    this=exp.Coalesce(
+                        this=exp.Column(this=exp.Identifier(this=desc_col)),
+                        expressions=[exp.Literal.string("")],
+                    ),
+                    expression=exp.Parameter(this=exp.Identifier(this="query")),
+                ),
+            ),
+        ]
+
+        # 使用 sqlglot AST 构建完整 SELECT
+        sql_ast = (
+            exp.Select(
+                expressions=[
+                    exp.Column(this=exp.Identifier(this="id")),
+                    exp.Alias(
+                        this=exp.Column(this=exp.Identifier(this=name_col)),
+                        alias=exp.Identifier(this="name"),
+                    ),
+                    exp.Alias(
+                        this=exp.Column(this=exp.Identifier(this=desc_col)),
+                        alias=exp.Identifier(this="description"),
+                    ),
+                    score_expr,
+                ],
+            )
+            .from_(exp.Table(this=exp.Identifier(this=table_name)))
+            .where(*where_conds)
+            .order_by(
+                exp.Order(
+                    expressions=[
+                        exp.Ordered(
+                            this=exp.Column(this=exp.Identifier(this="score")),
+                            desc=True,
+                        )
+                    ]
+                )
+            )
+            .limit(exp.Parameter(this=exp.Identifier(this="top_k")))
+        )
+
+        sql_str = sql_ast.sql(dialect="postgres")
+        sql = text(sql_str)
 
         result = await self._session.execute(sql, params)
         rows = result.fetchall()
@@ -375,8 +473,8 @@ class HybridSearcher:
         RRF 公式: RRF_score(d) = Σ 1/(k + rank_i(d))
 
         Args:
-            semantic_results: 语义搜索结果（entity_key → _RankedItem）。
-            keyword_results: 关键词搜索结果（entity_key → _RankedItem）。
+            semantic_results: 语义搜索结果（entity_key -> _RankedItem）。
+            keyword_results: 关键词搜索结果（entity_key -> _RankedItem）。
             k: RRF 参数，默认 60。
 
         Returns:
@@ -403,17 +501,17 @@ class HybridSearcher:
             # 取语义搜索的结果获取名称和描述（优先）
             item = semantic_results.get(key) or keyword_results.get(key)
 
-            scored.append(SearchHit(
-                entity_type=item.entity_type,
-                entity_id=item.entity_id,
-                score=rrf_score,
-                entity_name=item.name,
-                entity_description=item.description,
-                semantic_score=item.semantic_similarity,
-                keyword_score=(
-                    1.0 / (k + kw_rank) if kw_rank is not None else None
-                ),
-            ))
+            scored.append(
+                SearchHit(
+                    entity_type=item.entity_type,
+                    entity_id=item.entity_id,
+                    score=rrf_score,
+                    entity_name=item.name,
+                    entity_description=item.description,
+                    semantic_score=item.semantic_similarity,
+                    keyword_score=(1.0 / (k + kw_rank) if kw_rank is not None else None),
+                )
+            )
 
         # 按 RRF 得分降序排列
         scored.sort(key=lambda x: x.score, reverse=True)
@@ -530,6 +628,6 @@ def _tokenize_for_search(query: str) -> list[str]:
         分词后的 token 列表（仅 ASCII）。
     """
     # 按非字母数字字符拆分
-    tokens = re.split(r'[^\w]+', query, flags=re.UNICODE)
+    tokens = re.split(r"[^\w]+", query, flags=re.UNICODE)
     # 过滤空串、过短的 token、非 ASCII token（中文等）
     return [t.lower() for t in tokens if len(t) >= 2 and t.isascii()]

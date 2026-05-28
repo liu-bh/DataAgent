@@ -7,15 +7,13 @@
 from __future__ import annotations
 
 import math
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from datapilot_common.exceptions import NotFoundError
-
 from datapilot_semantic.api.dependencies import get_db
 from datapilot_semantic.models import Dimension, Metric, MetricDimension
 from datapilot_semantic.models.schemas import (
@@ -26,6 +24,9 @@ from datapilot_semantic.models.schemas import (
     PaginatedResponse,
     PaginationMeta,
 )
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/api/v1/metrics", tags=["指标"])
 
@@ -58,7 +59,7 @@ async def create_metric(
         calculation=body.calculation,
         unit=body.unit,
         version=1,
-        effective_time=datetime.now(timezone.utc),
+        effective_time=datetime.now(UTC),
         parent_metric_id=body.parent_metric_id,
         tags=body.tags,
     )
@@ -78,8 +79,8 @@ async def list_metrics(
     session: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="页码，从 1 开始"),
     page_size: int = Query(20, ge=1, le=100, description="每页条数"),
-    name: Optional[str] = Query(None, description="按指标名称模糊搜索"),
-    semantic_model_id: Optional[str] = Query(None, description="按语义模型 ID 筛选"),
+    name: str | None = Query(None, description="按指标名称模糊搜索"),
+    semantic_model_id: str | None = Query(None, description="按语义模型 ID 筛选"),
 ) -> PaginatedResponse[MetricResponse]:
     """获取指标列表。
 
@@ -152,9 +153,7 @@ async def update_metric(
     Returns:
         更新后的指标（新版本）。
     """
-    stmt = select(Metric).where(
-        Metric.id == metric_id, Metric.deleted_at.is_(None)
-    )
+    stmt = select(Metric).where(Metric.id == metric_id, Metric.deleted_at.is_(None))
     metric = (await session.execute(stmt)).scalar_one_or_none()
 
     if metric is None:
@@ -167,7 +166,7 @@ async def update_metric(
 
     # 自动递增版本号
     metric.version += 1
-    metric.effective_time = datetime.now(timezone.utc)
+    metric.effective_time = datetime.now(UTC)
 
     session.add(metric)
     await session.commit()
@@ -197,9 +196,7 @@ async def get_metric_dimensions(
         关联的维度列表。
     """
     # 先验证指标存在
-    metric_stmt = select(Metric).where(
-        Metric.id == metric_id, Metric.deleted_at.is_(None)
-    )
+    metric_stmt = select(Metric).where(Metric.id == metric_id, Metric.deleted_at.is_(None))
     metric = (await session.execute(metric_stmt)).scalar_one_or_none()
 
     if metric is None:

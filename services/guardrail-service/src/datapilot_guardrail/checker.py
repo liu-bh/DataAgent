@@ -90,9 +90,7 @@ class GuardrailChecker:
         needs_limit, actual_limit = self.row_limit_enforcer.check(sql, max_rows=effective_max_rows)
 
         if needs_limit:
-            warnings.append(
-                f"SQL 未指定 LIMIT 或超过限制，将截断为 {actual_limit} 行"
-            )
+            warnings.append(f"SQL 未指定 LIMIT 或超过限制，将截断为 {actual_limit} 行")
 
         # 3. 查询配额检查
         logger.info("开始查询配额检查", tenant_id=tenant_id)

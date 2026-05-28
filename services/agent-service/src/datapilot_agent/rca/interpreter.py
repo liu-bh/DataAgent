@@ -1,12 +1,16 @@
 """数据解释器（自然语言总结）。"""
+
 from __future__ import annotations
 
-from datapilot_agent.rca.models import (
-    AnomalyResult,
-    AttributionResult,
-    DrillDownResult,
-    RCAReport,
-)
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datapilot_agent.rca.models import (
+        AnomalyResult,
+        AttributionResult,
+        DrillDownResult,
+        RCAReport,
+    )
 
 
 class DataInterpreter:
@@ -73,10 +77,7 @@ class DataInterpreter:
             )
 
         top_desc = "；".join(parts)
-        return (
-            f"按「{drill_down.dimension_name}」维度下钻，"
-            f"主要变化来源：{top_desc}。"
-        )
+        return f"按「{drill_down.dimension_name}」维度下钻，主要变化来源：{top_desc}。"
 
     def summarize_attribution(self, attribution: AttributionResult) -> str:
         """生成归因分析的自然语言描述。
@@ -92,8 +93,10 @@ class DataInterpreter:
 
         drivers_desc = "、".join(attribution.key_drivers[:5])
         total_direction = (
-            "下降" if attribution.total_change < 0
-            else "上升" if attribution.total_change > 0
+            "下降"
+            if attribution.total_change < 0
+            else "上升"
+            if attribution.total_change > 0
             else "持平"
         )
 

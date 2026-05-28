@@ -10,7 +10,6 @@ import asyncio
 import time
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any
 
 import structlog
 
@@ -122,7 +121,7 @@ class LLMCallLogger:
         self._records.append(record)
         if len(self._records) > self._max_records:
             # 淘汰最旧的一半记录
-            self._records = self._records[len(self._records) // 2:]
+            self._records = self._records[len(self._records) // 2 :]
 
     async def log(
         self,
@@ -188,9 +187,7 @@ class LLMCallLogger:
         Returns:
             LLMCallStats 统计汇总结果。
         """
-        filtered = self._filter_records(
-            scene=scene, model=model, since=since, until=until
-        )
+        filtered = self._filter_records(scene=scene, model=model, since=since, until=until)
 
         if not filtered:
             return LLMCallStats()
@@ -230,9 +227,7 @@ class LLMCallLogger:
         Returns:
             模型标识符到统计结果的映射。
         """
-        filtered = self._filter_records(
-            scene=scene, since=since, until=until
-        )
+        filtered = self._filter_records(scene=scene, since=since, until=until)
 
         model_records: dict[str, list[LLMCallRecord]] = defaultdict(list)
         for record in filtered:
@@ -246,9 +241,7 @@ class LLMCallLogger:
                 total_calls=total,
                 success_calls=success,
                 failed_calls=total - success,
-                avg_latency_ms=round(
-                    sum(r.latency_ms for r in records) / total, 2
-                ),
+                avg_latency_ms=round(sum(r.latency_ms for r in records) / total, 2),
                 total_cost=round(sum(r.cost for r in records), 6),
                 total_prompt_tokens=sum(r.prompt_tokens for r in records),
                 total_completion_tokens=sum(r.completion_tokens for r in records),

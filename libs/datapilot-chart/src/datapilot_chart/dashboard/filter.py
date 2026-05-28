@@ -57,9 +57,7 @@ class DashboardFilter:
 
             # 根据过滤器定义判断是否为多选
             filter_type = (
-                filter_def_map[filter_id].filter_type
-                if filter_id in filter_def_map
-                else "select"
+                filter_def_map[filter_id].filter_type if filter_id in filter_def_map else "select"
             )
 
             if filter_type == "multi_select":
@@ -72,16 +70,12 @@ class DashboardFilter:
                 else:
                     # 单个值当作单值匹配
                     result = [
-                        row
-                        for row in result
-                        if str(row.get(field_name, "")) == str(filter_value)
+                        row for row in result if str(row.get(field_name, "")) == str(filter_value)
                     ]
             else:
                 # select / time_range: 精确匹配
                 result = [
-                    row
-                    for row in result
-                    if str(row.get(field_name, "")) == str(filter_value)
+                    row for row in result if str(row.get(field_name, "")) == str(filter_value)
                 ]
 
         return result
@@ -117,25 +111,19 @@ class DashboardFilter:
             filter_def = filter_def_map[filter_id]
 
             # multi_select 类型值必须为列表
-            if filter_def.filter_type == "multi_select" and not isinstance(
-                filter_value, list
-            ):
+            if filter_def.filter_type == "multi_select" and not isinstance(filter_value, list):
                 issues.append(
-                    f"过滤器 '{filter_id}' 是 multi_select 类型，"
-                    f"但值不是列表: {filter_value}"
+                    f"过滤器 '{filter_id}' 是 multi_select 类型，但值不是列表: {filter_value}"
                 )
                 continue
 
             # 检查值是否在可选项中（如果有 options）
             if filter_def.options:
-                values_to_check = (
-                    filter_value if isinstance(filter_value, list) else [filter_value]
-                )
+                values_to_check = filter_value if isinstance(filter_value, list) else [filter_value]
                 for val in values_to_check:
                     if str(val) not in [str(o) for o in filter_def.options]:
                         issues.append(
-                            f"过滤器 '{filter_id}' 的值 "
-                            f"'{val}' 不在可选项中: {filter_def.options}"
+                            f"过滤器 '{filter_id}' 的值 '{val}' 不在可选项中: {filter_def.options}"
                         )
 
         return issues

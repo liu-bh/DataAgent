@@ -28,7 +28,13 @@ class CodeSecurityChecker:
 
     # 危险的函数调用名称
     DANGEROUS_CALLS: set[str] = {
-        "system", "popen", "run", "Popen", "call", "check_output", "check_call",
+        "system",
+        "popen",
+        "run",
+        "Popen",
+        "call",
+        "check_output",
+        "check_call",
     }
 
     # 禁止导入的模块（顶层模块名）
@@ -50,7 +56,13 @@ class CodeSecurityChecker:
 
     # 禁止的属性访问
     FORBIDDEN_ATTRS: set[str] = {
-        "system", "popen", "spawn", "kill", "exec", "eval", "compile",
+        "system",
+        "popen",
+        "spawn",
+        "kill",
+        "exec",
+        "eval",
+        "compile",
     }
 
     # 禁止直接调用的内置函数名称
@@ -170,7 +182,11 @@ class CodeSecurityChecker:
                 )
 
         # 检查 open() 的写模式（直接调用 open(...) 的情况）
-        if isinstance(node.func, ast.Name) and node.func.id == "open" and self._has_write_mode(node):
+        if (
+            isinstance(node.func, ast.Name)
+            and node.func.id == "open"
+            and self._has_write_mode(node)
+        ):
             self._issues.append(
                 CodeSecurityIssue(
                     level=SecurityLevel.ERROR,

@@ -1,7 +1,6 @@
 """统计异常检测器。"""
-from __future__ import annotations
 
-import math
+from __future__ import annotations
 
 from datapilot_agent.rca.models import AnomalyResult
 
@@ -48,10 +47,7 @@ class AnomalyDetector:
         # 计算变化百分比
         if baseline_value == 0:
             # 基线为零时，如果当前值也不为零则视为 100% 变化
-            if current_value == 0:
-                change_percent = 0.0
-            else:
-                change_percent = 100.0
+            change_percent = 0.0 if current_value == 0 else 100.0
         else:
             change_percent = (current_value - baseline_value) / abs(baseline_value) * 100
 

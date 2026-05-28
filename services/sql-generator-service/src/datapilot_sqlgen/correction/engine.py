@@ -312,8 +312,10 @@ class SelfCorrectionEngine:
         """
         try:
             # 调用 LLM 路由器（使用 CORRECTION 场景）
+            from datapilot_llm.router import Scene
+
             response = await self._llm_router.generate(
-                scene="correction",
+                scene=Scene.CORRECTION,
                 prompt=user_prompt,
                 system=system_prompt,
                 json_mode=True,

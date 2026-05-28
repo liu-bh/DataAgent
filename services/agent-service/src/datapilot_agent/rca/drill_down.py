@@ -1,4 +1,5 @@
 """维度下钻分析器。"""
+
 from __future__ import annotations
 
 from datapilot_agent.rca.models import DimensionValue, DrillDownResult
@@ -93,9 +94,6 @@ class DimensionDrillDown:
         """
         contribution = current - baseline
 
-        if total_change == 0:
-            contribution_percent = 0.0
-        else:
-            contribution_percent = (contribution / abs(total_change)) * 100
+        contribution_percent = 0.0 if total_change == 0 else contribution / abs(total_change) * 100
 
         return contribution, round(contribution_percent, 2)

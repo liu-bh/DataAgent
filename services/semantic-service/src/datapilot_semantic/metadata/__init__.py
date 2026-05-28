@@ -18,7 +18,6 @@ from datapilot_semantic.metadata.schemas import (
     SyncResultResponse,
     TableSchema,
 )
-
 from datapilot_semantic.metadata.service import DataSourceService
 
 __all__ = [

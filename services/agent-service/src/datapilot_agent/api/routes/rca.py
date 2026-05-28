@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import time
 import uuid
-from typing import TYPE_CHECKING
 
 import structlog
 from fastapi import APIRouter, HTTPException
@@ -15,9 +14,6 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from datapilot_agent.rca.models import AnomalyResult, AttributionResult, RCAReport
 from datapilot_agent.rca.store import RCAStore
-
-if TYPE_CHECKING:
-    from datapilot_agent.rca.orchestrator import RCAOrchestrator
 
 logger = structlog.get_logger(__name__)
 
@@ -89,9 +85,7 @@ def _build_stub_report(
     current_value = float(current_data.get("value", 0))
     baseline_value = float(baseline_data.get("value", 1))
     change_percent = round(
-        ((current_value - baseline_value) / baseline_value * 100)
-        if baseline_value != 0
-        else 0.0,
+        ((current_value - baseline_value) / baseline_value * 100) if baseline_value != 0 else 0.0,
         2,
     )
 

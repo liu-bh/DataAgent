@@ -5,14 +5,16 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import structlog
 from fastapi import APIRouter, Query
 
 from datapilot_common.exceptions import NotFoundError
-from datapilot_queryexec.executor.engine import QueryEngine
 from datapilot_queryexec.executor.models import ExecuteRequest, FormatType, QueryTask
+
+if TYPE_CHECKING:
+    from datapilot_queryexec.executor.engine import QueryEngine
 
 logger = structlog.get_logger(__name__)
 

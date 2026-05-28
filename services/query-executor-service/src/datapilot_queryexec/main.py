@@ -6,14 +6,14 @@
 from __future__ import annotations
 
 import os
+from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
-from contextlib import asynccontextmanager
 
+from datapilot_queryexec.api import config_router, execute_router, health_router
 from datapilot_queryexec.executor.engine import QueryEngine
 from datapilot_queryexec.executor.task_manager import AsyncTaskManager
-from datapilot_queryexec.api import config_router, execute_router, health_router
 
 __version__ = "0.1.0"
 
@@ -35,6 +35,7 @@ async def lifespan(app: FastAPI):
 
     # 注入引擎到路由模块
     from datapilot_queryexec.api.routes.execute import set_engine
+
     set_engine(_engine)
 
     yield

@@ -28,6 +28,8 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import sqlglot
 from sqlglot.expressions import (
     Alias,
@@ -39,7 +41,8 @@ from sqlglot.expressions import (
     Where,
 )
 
-from datapilot_sql.dialect import Dialect, get_dialect
+if TYPE_CHECKING:
+    from datapilot_sql.dialect import Dialect
 
 
 class SQLTransformer:

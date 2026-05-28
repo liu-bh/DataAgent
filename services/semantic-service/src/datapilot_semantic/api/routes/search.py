@@ -8,15 +8,17 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from datapilot_semantic.api.dependencies import get_db as get_db_session
-from datapilot_semantic.retrieval.hybrid_search import HybridSearcher, SearchHit
 from datapilot_semantic.retrieval.embedding import EmbeddingClient
+from datapilot_semantic.retrieval.hybrid_search import HybridSearcher, SearchHit
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/api/v1/search", tags=["search"])
 

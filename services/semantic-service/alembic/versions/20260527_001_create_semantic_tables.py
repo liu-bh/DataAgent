@@ -17,19 +17,18 @@ Create Date: 2026-05-27
 同时创建必要的索引，包括 pgvector 向量索引和 GIN 数组索引。
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
+from alembic import op
 from pgvector.sqlalchemy import Vector
 from sqlalchemy.dialects import postgresql
 
-from alembic import op
-
 # revision identifiers, used by Alembic.
 revision: str = "20260527_001"
-down_revision: Union[str, None] = None
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = None
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 # ---------------------------------------------------------------------------
 # 启用 pgvector 扩展
@@ -39,7 +38,7 @@ depends_on: Union[str, Sequence[str], None] = None
 def _enable_extensions() -> None:
     """启用必要的 PostgreSQL 扩展。"""
     op.execute("CREATE EXTENSION IF NOT EXISTS vector")
-    op.execute("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"")
+    op.execute('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"')
 
 
 # ---------------------------------------------------------------------------
@@ -178,7 +177,9 @@ def _drop_datasource_health() -> None:
     """删除 datasource_health 表。"""
     op.drop_index("idx_datasource_health_status", table_name="datasource_health")
     op.drop_index("idx_datasource_health_datasource", table_name="datasource_health")
-    op.drop_constraint("fk_datasource_health_datasource_id", "datasource_health", type_="foreignkey")
+    op.drop_constraint(
+        "fk_datasource_health_datasource_id", "datasource_health", type_="foreignkey"
+    )
     op.drop_constraint("ck_datasource_health_status", "datasource_health", type_="check")
     op.drop_table("datasource_health")
 
@@ -655,9 +656,15 @@ def _drop_table_relationships() -> None:
     op.drop_index("idx_table_relationships_deleted_at", table_name="table_relationships")
     op.drop_index("idx_table_relationships_semantic_model", table_name="table_relationships")
     op.drop_index("idx_table_relationships_tenant", table_name="table_relationships")
-    op.drop_constraint("fk_table_relationships_right_table_id", "table_relationships", type_="foreignkey")
-    op.drop_constraint("fk_table_relationships_left_table_id", "table_relationships", type_="foreignkey")
-    op.drop_constraint("fk_table_relationships_semantic_model_id", "table_relationships", type_="foreignkey")
+    op.drop_constraint(
+        "fk_table_relationships_right_table_id", "table_relationships", type_="foreignkey"
+    )
+    op.drop_constraint(
+        "fk_table_relationships_left_table_id", "table_relationships", type_="foreignkey"
+    )
+    op.drop_constraint(
+        "fk_table_relationships_semantic_model_id", "table_relationships", type_="foreignkey"
+    )
     op.drop_constraint("ck_table_relationships_join_type", "table_relationships", type_="check")
     op.drop_table("table_relationships")
 

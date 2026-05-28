@@ -71,10 +71,7 @@ class ExecutorRegistry:
         executor = self._executors.get(task_type)
         if executor is None:
             available = list(self._executors.keys())
-            raise KeyError(
-                f"未找到任务类型 '{task_type}' 对应的执行器，"
-                f"可用类型: {available}"
-            )
+            raise KeyError(f"未找到任务类型 '{task_type}' 对应的执行器，可用类型: {available}")
         return executor
 
     def has(self, task_type: str) -> bool:

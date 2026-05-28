@@ -6,30 +6,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import StrEnum
 from typing import Any
 
-
-class TaskStatus(StrEnum):
-    """任务执行状态枚举。"""
-
-    PENDING = "pending"
-    """等待执行。"""
-
-    RUNNING = "running"
-    """正在执行。"""
-
-    COMPLETED = "completed"
-    """执行成功。"""
-
-    FAILED = "failed"
-    """执行失败。"""
-
-    SKIPPED = "skipped"
-    """被条件分支跳过。"""
-
-    CANCELLED = "cancelled"
-    """被取消。"""
+# 从 models 导入，保持对外 API 兼容
+from datapilot_dag.models import TaskStatus  # noqa: F401
 
 
 @dataclass

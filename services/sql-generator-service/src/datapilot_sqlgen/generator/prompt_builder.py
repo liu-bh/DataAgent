@@ -10,16 +10,13 @@ from typing import TYPE_CHECKING
 
 import structlog
 
-from .models import (
-    DimensionInfo,
-    FewShotExample,
-    MetricInfo,
-    SemanticContext,
-    TableInfo,
-)
-
 if TYPE_CHECKING:
     from datapilot_prompt.budget import TokenBudgetManager
+
+    from .models import (
+        FewShotExample,
+        SemanticContext,
+    )
 
 logger = structlog.get_logger(__name__)
 
@@ -197,7 +194,5 @@ class PromptBuilder:
         """将 Few-shot 列表格式化为 Prompt 文本段落。"""
         texts: list[str] = []
         for idx, example in enumerate(few_shots, start=1):
-            texts.append(
-                f"### 示例 {idx}\n{example.to_prompt_text()}"
-            )
+            texts.append(f"### 示例 {idx}\n{example.to_prompt_text()}")
         return texts

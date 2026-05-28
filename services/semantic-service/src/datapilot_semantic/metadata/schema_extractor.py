@@ -7,17 +7,15 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
 from sqlalchemy import create_engine, text
-from sqlalchemy.engine import Engine
 
+from datapilot_semantic.metadata.datasource_pool import build_connection_url
 from datapilot_semantic.metadata.schemas import (
     ColumnSchema,
     DataConnectionConfig,
     TableSchema,
 )
-from datapilot_semantic.metadata.datasource_pool import build_connection_url
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +113,7 @@ def _get_schema_query(dialect: str) -> str:
 
 def extract_schema(
     config: DataConnectionConfig,
-    schema_name: Optional[str] = None,
+    schema_name: str | None = None,
 ) -> list[TableSchema]:
     """从数据源提取表结构元数据。
 

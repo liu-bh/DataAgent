@@ -61,9 +61,7 @@ class ChartDescriptionGenerator:
         """
         if self._llm_router is not None:
             try:
-                return await self._generate_llm_title(
-                    chart_type, x_field, y_fields, data_summary
-                )
+                return await self._generate_llm_title(chart_type, x_field, y_fields, data_summary)
             except Exception:
                 logger.warning(
                     "llm_title_generation_failed",
@@ -105,9 +103,7 @@ class ChartDescriptionGenerator:
                     error="降级为规则描述",
                 )
 
-        return self._generate_rule_based_description(
-            chart_type, x_field, y_fields, result_stats
-        )
+        return self._generate_rule_based_description(chart_type, x_field, y_fields, result_stats)
 
     def _generate_rule_based_title(
         self,
@@ -191,7 +187,7 @@ class ChartDescriptionGenerator:
         elif chart_type == "area":
             desc = f"展示{fields_str}随{x_field}的累计变化"
         elif chart_type == "heatmap":
-            desc = f"以热力图展示多维数据交叉分布"
+            desc = "以热力图展示多维数据交叉分布"
         else:
             desc = f"展示{x_field}与{fields_str}的关系"
 

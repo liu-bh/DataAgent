@@ -6,10 +6,9 @@
 
 from __future__ import annotations
 
-import structlog
-
 import sqlglot
-from sqlglot.expressions import And, Expression, Where
+import structlog
+from sqlglot.expressions import And, Where
 
 logger = structlog.get_logger(__name__)
 

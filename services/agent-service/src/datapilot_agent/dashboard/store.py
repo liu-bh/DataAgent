@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 import structlog
@@ -77,9 +77,11 @@ class DashboardStore:
                 stored_layout.dashboard_id = dashboard_id
 
         self._dashboards[dashboard_id] = stored_layout
-        self._created_at[dashboard_id] = datetime.now(timezone.utc).isoformat()
+        self._created_at[dashboard_id] = datetime.now(UTC).isoformat()
 
-        logger.info("Dashboard 已保存", dashboard_id=dashboard_id, title=getattr(stored_layout, "title", ""))
+        logger.info(
+            "Dashboard 已保存", dashboard_id=dashboard_id, title=getattr(stored_layout, "title", "")
+        )
         return dashboard_id
 
     def get(self, dashboard_id: str) -> DashboardLayout | None:
@@ -167,9 +169,7 @@ class DashboardStore:
         if "remove_panel_ids" in updates and updates["remove_panel_ids"]:
             panels = list(layout.panels) if layout.panels else []
             remove_ids = set(updates["remove_panel_ids"])
-            layout.panels = [
-                p for p in panels if p.get("panel_id") not in remove_ids
-            ]
+            layout.panels = [p for p in panels if p.get("panel_id") not in remove_ids]
 
         logger.info("Dashboard 已更新", dashboard_id=dashboard_id, updates=list(updates.keys()))
         return layout

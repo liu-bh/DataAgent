@@ -7,11 +7,9 @@ from __future__ import annotations
 
 import math
 from datetime import datetime
-from typing import Any, Generic, Optional, TypeVar
-from uuid import UUID
+from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-
 
 # ---------------------------------------------------------------------------
 # 通用分页响应
@@ -71,7 +69,7 @@ class SemanticModelCreate(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     name: str = Field(..., min_length=1, max_length=100, description="业务语义视图名称")
-    description: Optional[str] = Field(None, description="视图描述")
+    description: str | None = Field(None, description="视图描述")
     domain: str = Field(..., description="业务域（电商/运营/财务/通用）")
     data_source_ids: list[str] = Field(default_factory=list, description="关联的数据源 ID 数组")
 
@@ -90,14 +88,14 @@ class SemanticModelUpdate(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    name: Optional[str] = Field(None, min_length=1, max_length=100, description="业务语义视图名称")
-    description: Optional[str] = Field(None, description="视图描述")
-    domain: Optional[str] = Field(None, description="业务域（电商/运营/财务/通用）")
-    data_source_ids: Optional[list[str]] = Field(None, description="关联的数据源 ID 数组")
+    name: str | None = Field(None, min_length=1, max_length=100, description="业务语义视图名称")
+    description: str | None = Field(None, description="视图描述")
+    domain: str | None = Field(None, description="业务域（电商/运营/财务/通用）")
+    data_source_ids: list[str] | None = Field(None, description="关联的数据源 ID 数组")
 
     @field_validator("domain")
     @classmethod
-    def validate_domain(cls, v: Optional[str]) -> Optional[str]:
+    def validate_domain(cls, v: str | None) -> str | None:
         """校验业务域枚举值。"""
         if v is not None:
             allowed = ("电商", "运营", "财务", "通用")
@@ -114,14 +112,14 @@ class SemanticModelResponse(BaseModel):
     id: str = Field(description="语义模型 ID")
     tenant_id: str = Field(description="租户 ID")
     name: str = Field(description="业务语义视图名称")
-    description: Optional[str] = Field(None, description="视图描述")
+    description: str | None = Field(None, description="视图描述")
     domain: str = Field(description="业务域")
     data_source_ids: list[str] = Field(description="关联的数据源 ID 数组")
     created_at: datetime = Field(description="创建时间")
     updated_at: datetime = Field(description="更新时间")
     # 关联信息（详情接口会填充）
-    metrics: list["MetricResponse"] = Field(default_factory=list, description="关联的指标")
-    dimensions: list["DimensionResponse"] = Field(default_factory=list, description="关联的维度")
+    metrics: list[MetricResponse] = Field(default_factory=list, description="关联的指标")
+    dimensions: list[DimensionResponse] = Field(default_factory=list, description="关联的维度")
 
 
 # ---------------------------------------------------------------------------
@@ -136,10 +134,10 @@ class MetricCreate(BaseModel):
 
     semantic_model_id: str = Field(..., description="所属语义模型 ID")
     name: str = Field(..., min_length=1, max_length=100, description="指标名称")
-    description: Optional[str] = Field(None, description="指标描述")
+    description: str | None = Field(None, description="指标描述")
     calculation: str = Field(..., min_length=1, description="计算表达式")
-    unit: Optional[str] = Field(None, max_length=20, description="单位：元/个/率")
-    parent_metric_id: Optional[str] = Field(None, description="父指标 ID（嵌套引用）")
+    unit: str | None = Field(None, max_length=20, description="单位：元/个/率")
+    parent_metric_id: str | None = Field(None, description="父指标 ID（嵌套引用）")
     tags: list[str] = Field(default_factory=list, description="标签数组")
 
 
@@ -148,12 +146,12 @@ class MetricUpdate(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    name: Optional[str] = Field(None, min_length=1, max_length=100, description="指标名称")
-    description: Optional[str] = Field(None, description="指标描述")
-    calculation: Optional[str] = Field(None, min_length=1, description="计算表达式")
-    unit: Optional[str] = Field(None, max_length=20, description="单位：元/个/率")
-    parent_metric_id: Optional[str] = Field(None, description="父指标 ID")
-    tags: Optional[list[str]] = Field(None, description="标签数组")
+    name: str | None = Field(None, min_length=1, max_length=100, description="指标名称")
+    description: str | None = Field(None, description="指标描述")
+    calculation: str | None = Field(None, min_length=1, description="计算表达式")
+    unit: str | None = Field(None, max_length=20, description="单位：元/个/率")
+    parent_metric_id: str | None = Field(None, description="父指标 ID")
+    tags: list[str] | None = Field(None, description="标签数组")
 
 
 class MetricResponse(BaseModel):
@@ -165,12 +163,12 @@ class MetricResponse(BaseModel):
     tenant_id: str = Field(description="租户 ID")
     semantic_model_id: str = Field(description="所属语义模型 ID")
     name: str = Field(description="指标名称")
-    description: Optional[str] = Field(None, description="指标描述")
+    description: str | None = Field(None, description="指标描述")
     calculation: str = Field(description="计算表达式")
-    unit: Optional[str] = Field(None, description="单位")
+    unit: str | None = Field(None, description="单位")
     version: int = Field(description="当前版本号")
-    effective_time: Optional[datetime] = Field(None, description="版本生效时间")
-    parent_metric_id: Optional[str] = Field(None, description="父指标 ID")
+    effective_time: datetime | None = Field(None, description="版本生效时间")
+    parent_metric_id: str | None = Field(None, description="父指标 ID")
     tags: list[str] = Field(description="标签数组")
     created_at: datetime = Field(description="创建时间")
     updated_at: datetime = Field(description="更新时间")
@@ -188,15 +186,15 @@ class DimensionCreate(BaseModel):
 
     semantic_model_id: str = Field(..., description="所属语义模型 ID")
     name: str = Field(..., min_length=1, max_length=100, description="维度名称")
-    column_name: Optional[str] = Field(None, max_length=200, description="对应物理列名")
-    table_id: Optional[str] = Field(None, description="所属源表 ID")
+    column_name: str | None = Field(None, max_length=200, description="对应物理列名")
+    table_id: str | None = Field(None, description="所属源表 ID")
     synonyms: list[str] = Field(default_factory=list, description="同义词数组")
-    hierarchy: Optional[dict[str, Any]] = Field(None, description="层级定义")
+    hierarchy: dict[str, Any] | None = Field(None, description="层级定义")
     is_virtual: bool = Field(default=False, description="是否虚拟维度")
-    virtual_expression: Optional[str] = Field(None, description="虚拟维度表达式")
+    virtual_expression: str | None = Field(None, description="虚拟维度表达式")
 
     @model_validator(mode="after")
-    def validate_virtual_expression(self) -> "DimensionCreate":
+    def validate_virtual_expression(self) -> DimensionCreate:
         """虚拟维度必须有表达式。"""
         if self.is_virtual and not self.virtual_expression:
             raise ValueError("虚拟维度必须提供 virtual_expression")
@@ -208,13 +206,13 @@ class DimensionUpdate(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    name: Optional[str] = Field(None, min_length=1, max_length=100, description="维度名称")
-    column_name: Optional[str] = Field(None, max_length=200, description="对应物理列名")
-    table_id: Optional[str] = Field(None, description="所属源表 ID")
-    synonyms: Optional[list[str]] = Field(None, description="同义词数组")
-    hierarchy: Optional[dict[str, Any]] = Field(None, description="层级定义")
-    is_virtual: Optional[bool] = Field(None, description="是否虚拟维度")
-    virtual_expression: Optional[str] = Field(None, description="虚拟维度表达式")
+    name: str | None = Field(None, min_length=1, max_length=100, description="维度名称")
+    column_name: str | None = Field(None, max_length=200, description="对应物理列名")
+    table_id: str | None = Field(None, description="所属源表 ID")
+    synonyms: list[str] | None = Field(None, description="同义词数组")
+    hierarchy: dict[str, Any] | None = Field(None, description="层级定义")
+    is_virtual: bool | None = Field(None, description="是否虚拟维度")
+    virtual_expression: str | None = Field(None, description="虚拟维度表达式")
 
 
 class DimensionResponse(BaseModel):
@@ -226,12 +224,12 @@ class DimensionResponse(BaseModel):
     tenant_id: str = Field(description="租户 ID")
     semantic_model_id: str = Field(description="所属语义模型 ID")
     name: str = Field(description="维度名称")
-    column_name: Optional[str] = Field(None, description="对应物理列名")
-    table_id: Optional[str] = Field(None, description="所属源表 ID")
+    column_name: str | None = Field(None, description="对应物理列名")
+    table_id: str | None = Field(None, description="所属源表 ID")
     synonyms: list[str] = Field(description="同义词数组")
-    hierarchy: Optional[dict[str, Any]] = Field(None, description="层级定义")
+    hierarchy: dict[str, Any] | None = Field(None, description="层级定义")
     is_virtual: bool = Field(description="是否虚拟维度")
-    virtual_expression: Optional[str] = Field(None, description="虚拟维度表达式")
+    virtual_expression: str | None = Field(None, description="虚拟维度表达式")
     created_at: datetime = Field(description="创建时间")
     updated_at: datetime = Field(description="更新时间")
 

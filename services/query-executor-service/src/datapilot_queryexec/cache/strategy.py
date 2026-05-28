@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 import hashlib
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import StrEnum
 
 import structlog
@@ -19,6 +19,7 @@ class CacheTier(StrEnum):
     NONE = "none"  # 不缓存
     REDIS = "redis"  # 小结果缓存到 Redis（<1MB）
     MINIO = "minio"  # 大结果缓存到 MinIO（>=1MB）
+
 
 logger = structlog.get_logger(__name__)
 

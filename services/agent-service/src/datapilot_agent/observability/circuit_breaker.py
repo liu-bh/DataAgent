@@ -9,12 +9,14 @@
 
 from __future__ import annotations
 
-import asyncio
 import time
 from enum import StrEnum
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any
 
 import structlog
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 logger = structlog.get_logger(__name__)
 
@@ -115,9 +117,7 @@ class CircuitBreaker:
 
         if current_state == CircuitState.OPEN:
             self._total_rejected += 1
-            raise CircuitOpenError(
-                f"断路器 [{self._name}] 处于 OPEN 状态，拒绝调用"
-            )
+            raise CircuitOpenError(f"断路器 [{self._name}] 处于 OPEN 状态，拒绝调用")
 
         self._total_calls += 1
 
@@ -125,7 +125,7 @@ class CircuitBreaker:
             result = await func(*args, **kwargs)
             self._record_success()
             return result
-        except Exception as exc:
+        except Exception:
             self._record_failure()
             raise
 

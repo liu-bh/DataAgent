@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 import structlog
@@ -91,9 +91,7 @@ class SemanticCache:
         """
         import os
 
-        redis_url = redis_url or os.getenv(
-            "AGENT_REDIS_URL", DEFAULT_REDIS_URL
-        )
+        redis_url = redis_url or os.getenv("AGENT_REDIS_URL", DEFAULT_REDIS_URL)
 
         self._config = SemanticCacheConfig(
             redis_url=redis_url,
@@ -198,13 +196,15 @@ class SemanticCache:
         for item in data:
             if not isinstance(item, dict):
                 continue
-            results.append(CachedSearchResult(
-                entity_type=item.get("entity_type", ""),
-                entity_id=item.get("entity_id", ""),
-                score=float(item.get("score", 0.0)),
-                entity_name=item.get("entity_name"),
-                entity_description=item.get("entity_description"),
-            ))
+            results.append(
+                CachedSearchResult(
+                    entity_type=item.get("entity_type", ""),
+                    entity_id=item.get("entity_id", ""),
+                    score=float(item.get("score", 0.0)),
+                    entity_name=item.get("entity_name"),
+                    entity_description=item.get("entity_description"),
+                )
+            )
         return results
 
     # ------------------------------------------------------------------

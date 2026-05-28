@@ -6,14 +6,12 @@
 from __future__ import annotations
 
 import math
-from typing import Optional
+from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from datapilot_common.exceptions import NotFoundError
-
 from datapilot_semantic.api.dependencies import get_db
 from datapilot_semantic.models import Dimension
 from datapilot_semantic.models.schemas import (
@@ -23,6 +21,9 @@ from datapilot_semantic.models.schemas import (
     PaginatedResponse,
     PaginationMeta,
 )
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/api/v1/dimensions", tags=["维度"])
 
@@ -72,9 +73,7 @@ async def list_dimensions(
     session: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="页码，从 1 开始"),
     page_size: int = Query(20, ge=1, le=100, description="每页条数"),
-    semantic_model_id: Optional[str] = Query(
-        None, description="按语义模型 ID 筛选"
-    ),
+    semantic_model_id: str | None = Query(None, description="按语义模型 ID 筛选"),
 ) -> PaginatedResponse[DimensionResponse]:
     """获取维度列表。
 
@@ -144,9 +143,7 @@ async def update_dimension(
     Returns:
         更新后的维度。
     """
-    stmt = select(Dimension).where(
-        Dimension.id == dimension_id, Dimension.deleted_at.is_(None)
-    )
+    stmt = select(Dimension).where(Dimension.id == dimension_id, Dimension.deleted_at.is_(None))
     dimension = (await session.execute(stmt)).scalar_one_or_none()
 
     if dimension is None:

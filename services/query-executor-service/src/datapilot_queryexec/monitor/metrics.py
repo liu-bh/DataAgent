@@ -113,9 +113,5 @@ def record_health_metrics(
         pool_size: 连接池总大小。
     """
     DATASOURCE_HEALTH.labels(datasource_id=datasource_id).set(1 if healthy else 0)
-    CONNECTOR_POOL_USED.labels(
-        datasource_id=datasource_id, dialect=dialect
-    ).set(pool_used)
-    CONNECTOR_POOL_SIZE.labels(
-        datasource_id=datasource_id, dialect=dialect
-    ).set(pool_size)
+    CONNECTOR_POOL_USED.labels(datasource_id=datasource_id, dialect=dialect).set(pool_used)
+    CONNECTOR_POOL_SIZE.labels(datasource_id=datasource_id, dialect=dialect).set(pool_size)

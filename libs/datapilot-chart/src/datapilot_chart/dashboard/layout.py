@@ -41,11 +41,13 @@ class LayoutEngine:
         col = 0
 
         for panel in panels:
-            positions.append({
-                "panel_id": panel.panel_id,
-                "row": row,
-                "col": col,
-            })
+            positions.append(
+                {
+                    "panel_id": panel.panel_id,
+                    "row": row,
+                    "col": col,
+                }
+            )
             col += panel.width
 
             # 当累计宽度达到或超过列数时换行
@@ -83,23 +85,15 @@ class LayoutEngine:
         # 检查面板宽度范围
         for panel in panels:
             if panel.width < 1 or panel.width > 12:
-                issues.append(
-                    f"面板 '{panel.panel_id}' 的宽度 {panel.width} "
-                    f"不在有效范围 1-12 内"
-                )
+                issues.append(f"面板 '{panel.panel_id}' 的宽度 {panel.width} 不在有效范围 1-12 内")
 
             # 检查宽度是否超过总列数
             if panel.width > columns:
-                issues.append(
-                    f"面板 '{panel.panel_id}' 的宽度 {panel.width} "
-                    f"超过总列数 {columns}"
-                )
+                issues.append(f"面板 '{panel.panel_id}' 的宽度 {panel.width} 超过总列数 {columns}")
 
             # 检查标题是否为空
             if not panel.title:
-                issues.append(
-                    f"面板 '{panel.panel_id}' 的标题为空"
-                )
+                issues.append(f"面板 '{panel.panel_id}' 的标题为空")
 
         # 检查面板 ID 是否重复
         panel_ids = [p.panel_id for p in panels]

@@ -6,14 +6,16 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Any, Callable, Coroutine
+from collections.abc import Callable, Coroutine
+from typing import TYPE_CHECKING, Any
 
 import structlog
 
 from datapilot_queryexec.executor.formatter import ResultFormatter
 from datapilot_queryexec.executor.models import ExecuteRequest, QueryTask, TaskStatus
-from datapilot_queryexec.executor.task_manager import AsyncTaskManager
+
+if TYPE_CHECKING:
+    from datapilot_queryexec.executor.task_manager import AsyncTaskManager
 
 logger = structlog.get_logger(__name__)
 

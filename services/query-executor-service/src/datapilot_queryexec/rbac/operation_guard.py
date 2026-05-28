@@ -6,9 +6,8 @@
 
 from __future__ import annotations
 
-import structlog
-
 import sqlglot
+import structlog
 from sqlglot import exp
 
 from datapilot_queryexec.rbac.models import OperationType
@@ -35,9 +34,7 @@ class OperationGuard:
     """操作级权限守卫。"""
 
     @staticmethod
-    def check(
-        sql: str, allowed_operations: list[OperationType]
-    ) -> tuple[bool, str]:
+    def check(sql: str, allowed_operations: list[OperationType]) -> tuple[bool, str]:
         """检查 SQL 操作类型是否在允许范围内。
 
         使用 sqlglot AST 判断 SQL 的操作类型：

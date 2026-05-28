@@ -32,7 +32,11 @@ class ChartConfigFactory:
 
         # 标题
         if spec.title:
-            option["title"] = {"text": spec.title, "left": "center", "textStyle": {"color": theme.text_color}}
+            option["title"] = {
+                "text": spec.title,
+                "left": "center",
+                "textStyle": {"color": theme.text_color},
+            }
 
         # 图表类型对应的构建方法
         builder_map: dict[ChartType, Any] = {
@@ -144,7 +148,13 @@ class ChartConfigFactory:
                 "radius": "55%",
                 "center": ["50%", "55%"],
                 "data": pie_data,
-                "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0, 0, 0, 0.5)"}},
+                "emphasis": {
+                    "itemStyle": {
+                        "shadowBlur": 10,
+                        "shadowOffsetX": 0,
+                        "shadowColor": "rgba(0, 0, 0, 0.5)",
+                    }
+                },
             }
             if s.item_style:
                 series_item["itemStyle"] = s.item_style
@@ -225,14 +235,18 @@ class ChartConfigFactory:
         config["radar"] = {"indicator": indicators}
         series_data = []
         for s in spec.series:
-            series_data.append({
-                "value": s.data,
-                "name": s.name,
-            })
-        config["series"] = [{
-            "type": "radar",
-            "data": series_data,
-        }]
+            series_data.append(
+                {
+                    "value": s.data,
+                    "name": s.name,
+                }
+            )
+        config["series"] = [
+            {
+                "type": "radar",
+                "data": series_data,
+            }
+        ]
 
         return config
 
@@ -246,7 +260,9 @@ class ChartConfigFactory:
                 "type": "gauge",
                 "detail": {"formatter": "{value}%"},
                 "data": s.data,
-                "axisLine": {"lineStyle": {"color": [[0.3, "#67e0e3"], [0.7, "#37a2da"], [1, "#fd666d"]]}},
+                "axisLine": {
+                    "lineStyle": {"color": [[0.3, "#67e0e3"], [0.7, "#37a2da"], [1, "#fd666d"]]}
+                },
             }
             config["series"].append(series_item)
 

@@ -137,25 +137,17 @@ class PythonTaskExecutor(BaseTaskExecutor):
                     max_output_bytes=max_output_bytes,
                 )
                 result = {
-                    "stdout": self._truncate_output(
-                        exec_result.stdout, max_output_bytes
-                    ),
-                    "stderr": self._truncate_output(
-                        exec_result.stderr, max_output_bytes
-                    ),
+                    "stdout": self._truncate_output(exec_result.stdout, max_output_bytes),
+                    "stderr": self._truncate_output(exec_result.stderr, max_output_bytes),
                     "success": exec_result.exit_code == 0,
-                    "execution_time_ms": round(
-                        (time.perf_counter() - start_time) * 1000, 2
-                    ),
+                    "execution_time_ms": round((time.perf_counter() - start_time) * 1000, 2),
                     "sandbox_available": True,
                 }
 
             execution_time_ms = round((time.perf_counter() - start_time) * 1000, 2)
             result["execution_time_ms"] = execution_time_ms
 
-            log_fn = (
-                logger.info if result["success"] else logger.warning
-            )
+            log_fn = logger.info if result["success"] else logger.warning
             log_fn(
                 "python_executor_completed",
                 node_id=node_id,
@@ -176,9 +168,7 @@ class PythonTaskExecutor(BaseTaskExecutor):
                 "stdout": "",
                 "stderr": f"代码执行超时（{timeout}秒）",
                 "success": False,
-                "execution_time_ms": round(
-                    (time.perf_counter() - start_time) * 1000, 2
-                ),
+                "execution_time_ms": round((time.perf_counter() - start_time) * 1000, 2),
                 "sandbox_available": sandbox is not None,
             }
         except Exception as exc:
@@ -191,9 +181,7 @@ class PythonTaskExecutor(BaseTaskExecutor):
                 "stdout": "",
                 "stderr": str(exc),
                 "success": False,
-                "execution_time_ms": round(
-                    (time.perf_counter() - start_time) * 1000, 2
-                ),
+                "execution_time_ms": round((time.perf_counter() - start_time) * 1000, 2),
                 "sandbox_available": sandbox is not None,
             }
 
@@ -284,10 +272,21 @@ class PythonTaskExecutor(BaseTaskExecutor):
 
         # 安全检查：禁止危险导入
         _dangerous_imports = {
-            "os", "subprocess", "sys", "shutil", "signal",
-            "socket", "ctypes", "importlib", "runpy",
-            "multiprocessing", "threading", "_thread",
-            "posix", "nt", "builtins",
+            "os",
+            "subprocess",
+            "sys",
+            "shutil",
+            "signal",
+            "socket",
+            "ctypes",
+            "importlib",
+            "runpy",
+            "multiprocessing",
+            "threading",
+            "_thread",
+            "posix",
+            "nt",
+            "builtins",
         }
 
         # --- 语法和安全检查 ---
@@ -313,9 +312,7 @@ class PythonTaskExecutor(BaseTaskExecutor):
             elif isinstance(node, ast.ImportFrom) and node.module:
                 module_name = node.module.split(".")[0]
                 if module_name in _dangerous_imports:
-                    violations.append(
-                        f"禁止从模块导入: {node.module}"
-                    )
+                    violations.append(f"禁止从模块导入: {node.module}")
 
         if violations:
             return {
@@ -360,9 +357,7 @@ class PythonTaskExecutor(BaseTaskExecutor):
 
         # 构建子进程的启动代码
         exec_globals_str = (
-            '{"__builtins__": __builtins__, '
-            '"__name__": "__datapilot_sandbox__", '
-            '"context": _ctx}'
+            '{"__builtins__": __builtins__, "__name__": "__datapilot_sandbox__", "context": _ctx}'
         )
         bootstrap_code = (
             "import sys, json\n"

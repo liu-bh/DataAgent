@@ -95,10 +95,7 @@ class LocalProcessSandbox(SandboxExecutor):
 
         # 1. 安全检查
         security_issues = self._check_security(code)
-        error_issues = [
-            issue for issue in security_issues
-            if issue.level == SecurityLevel.ERROR
-        ]
+        error_issues = [issue for issue in security_issues if issue.level == SecurityLevel.ERROR]
         if error_issues:
             return SandboxResult(
                 success=False,
@@ -201,7 +198,7 @@ class LocalProcessSandbox(SandboxExecutor):
         forbidden_repr = repr(forbidden)
         memory_mb = config.memory_limit_mb
 
-        prelude = f'''
+        prelude = f"""
 import sys
 import importlib
 import io
@@ -225,7 +222,7 @@ def _safe_import(name, *args, **kwargs):
 __builtins__.__import__ = _safe_import
 __builtins__.exec = None  # 禁止 exec
 __builtins__.eval = None  # 禁止 eval
-'''
+"""
         return prelude
 
     def _check_security(self, code: str) -> list[CodeSecurityIssue]:

@@ -341,12 +341,8 @@ class IntentRouter:
 
 # 常见意图分类的缓存表
 _COMMON_INTENTS: dict[str, IntentResult] = {
-    "你好": IntentResult(
-        intent_type=IntentType.CHITCHAT, confidence=1.0, reason="常见问候语"
-    ),
-    "谢谢": IntentResult(
-        intent_type=IntentType.CHITCHAT, confidence=1.0, reason="常见致谢语"
-    ),
+    "你好": IntentResult(intent_type=IntentType.CHITCHAT, confidence=1.0, reason="常见问候语"),
+    "谢谢": IntentResult(intent_type=IntentType.CHITCHAT, confidence=1.0, reason="常见致谢语"),
 }
 
 

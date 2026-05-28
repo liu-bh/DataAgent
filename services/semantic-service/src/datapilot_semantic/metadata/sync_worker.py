@@ -7,20 +7,22 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
-from typing import Optional
-from uuid import UUID
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from datapilot_semantic.metadata.models import DataSource, SourceTable
+from datapilot_semantic.metadata.schema_extractor import extract_schema
 from datapilot_semantic.metadata.schemas import (
     DataConnectionConfig,
     SyncResultResponse,
-    TableSchema,
 )
-from datapilot_semantic.metadata.schema_extractor import extract_schema
+
+if TYPE_CHECKING:
+    from uuid import UUID
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +31,7 @@ async def sync_metadata(
     db: AsyncSession,
     datasource: DataSource,
     *,
-    schema_name: Optional[str] = None,
+    schema_name: str | None = None,
     force_full: bool = False,
 ) -> SyncResultResponse:
     """同步数据源元数据到 source_tables 表。
@@ -72,7 +74,7 @@ async def sync_metadata(
             updated_tables=0,
             new_tables=0,
             message=f"Schema 提取失败: {e}",
-            synced_at=datetime.now(timezone.utc),
+            synced_at=datetime.now(UTC),
         )
 
     if not remote_tables:
@@ -84,10 +86,10 @@ async def sync_metadata(
             updated_tables=0,
             new_tables=0,
             message="未发现任何表",
-            synced_at=datetime.now(timezone.utc),
+            synced_at=datetime.now(UTC),
         )
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     total_tables = len(remote_tables)
     new_count = 0
     updated_count = 0
@@ -101,17 +103,13 @@ async def sync_metadata(
     )
     result = await db.execute(existing_stmt)
     existing_tables = result.scalars().all()
-    existing_map: dict[str, SourceTable] = {
-        t.table_name: t for t in existing_tables
-    }
+    existing_map: dict[str, SourceTable] = {t.table_name: t for t in existing_tables}
 
     remote_table_names = {t.table_name for t in remote_tables}
 
     # 处理每个远程表
     for table_schema in remote_tables:
-        columns_data = [
-            col.model_dump() for col in table_schema.columns
-        ]
+        columns_data = [col.model_dump() for col in table_schema.columns]
 
         if table_schema.table_name in existing_map:
             # 已存在 → 更新
@@ -156,10 +154,7 @@ async def sync_metadata(
     await db.flush()
 
     status = "success" if synced_count == total_tables else "partial"
-    message = (
-        f"同步完成: 共 {total_tables} 张表, "
-        f"新增 {new_count}, 更新 {updated_count}"
-    )
+    message = f"同步完成: 共 {total_tables} 张表, 新增 {new_count}, 更新 {updated_count}"
 
     logger.info(
         "元数据同步完成: datasource_id=%s, status=%s, total=%d, new=%d, updated=%d",

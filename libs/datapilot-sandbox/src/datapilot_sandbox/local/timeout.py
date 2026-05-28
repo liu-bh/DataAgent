@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import sys
 import time
 
@@ -81,26 +82,22 @@ class ProcessTimeout:
                 elapsed_ms = (time.monotonic() - start_time) * 1000
                 return process.returncode or 0, stdout or b"", stderr or b"", elapsed_ms
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 # 超时，强制终止进程
                 elapsed_ms = (time.monotonic() - start_time) * 1000
 
-                try:
+                with contextlib.suppress(ProcessLookupError):
                     process.kill()
-                except ProcessLookupError:
-                    pass
 
-                try:
+                with contextlib.suppress(Exception):
                     await process.wait()
-                except Exception:
-                    pass
 
                 return -1, b"", b"", elapsed_ms
 
         except FileNotFoundError:
             elapsed_ms = (time.monotonic() - start_time) * 1000
-            return -1, b"", f"Python 解释器不存在: {python_path}".encode("utf-8"), elapsed_ms
+            return -1, b"", f"Python 解释器不存在: {python_path}".encode(), elapsed_ms
 
         except OSError as exc:
             elapsed_ms = (time.monotonic() - start_time) * 1000
-            return -1, b"", f"进程启动失败: {exc}".encode("utf-8"), elapsed_ms
+            return -1, b"", f"进程启动失败: {exc}".encode(), elapsed_ms

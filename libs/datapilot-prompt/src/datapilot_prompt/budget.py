@@ -150,9 +150,7 @@ class TokenBudgetManager:
         few_shots_tokens = self.estimate_tokens(few_shots_text)
         question_tokens = self.estimate_tokens(question)
 
-        total_tokens = (
-            system_prompt_tokens + context_tokens + few_shots_tokens + question_tokens
-        )
+        total_tokens = system_prompt_tokens + context_tokens + few_shots_tokens + question_tokens
 
         within_budget = total_tokens <= effective_budget
 
@@ -217,9 +215,10 @@ class TokenBudgetManager:
         # 逐步减少 few-shot 数量直到不超预算
         while (
             len(adjusted_few_shots) > 0
-            and context_tokens + self.estimate_tokens("\n".join(adjusted_few_shots)) > remaining_budget
+            and context_tokens + self.estimate_tokens("\n".join(adjusted_few_shots))
+            > remaining_budget
         ):
-            removed = adjusted_few_shots.pop()
+            adjusted_few_shots.pop()
             truncated = True
             truncation_detail += f"移除 Few-shot 示例（剩余 {len(adjusted_few_shots)} 个）; "
             logger.debug(
@@ -232,7 +231,10 @@ class TokenBudgetManager:
         few_shots_tokens = self.estimate_tokens(few_shots_text)
 
         # 第二步：如果 context + few_shots 仍超预算，裁剪 context
-        if context_tokens + few_shots_tokens > remaining_budget and remaining_budget > few_shots_tokens:
+        if (
+            context_tokens + few_shots_tokens > remaining_budget
+            and remaining_budget > few_shots_tokens
+        ):
             available_for_context = remaining_budget - few_shots_tokens
             if available_for_context > 0:
                 # 按比例裁剪 context

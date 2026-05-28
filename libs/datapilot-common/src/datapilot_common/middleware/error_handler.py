@@ -15,13 +15,15 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from datapilot_common.exceptions import AppError
+
+if TYPE_CHECKING:
+    from fastapi import FastAPI, Request
 
 
 def _build_error_body(
@@ -45,9 +47,7 @@ def _build_error_body(
 
 def _get_trace_id(request: Request) -> str | None:
     """从请求上下文中获取 trace_id。"""
-    return getattr(request.state, "trace_id", None) or request.headers.get(
-        "X-Trace-ID"
-    )
+    return getattr(request.state, "trace_id", None) or request.headers.get("X-Trace-ID")
 
 
 # ---------------------------------------------------------------------------

@@ -8,20 +8,23 @@ from __future__ import annotations
 import enum
 import time
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 import structlog
 
 from datapilot_llm.client import LLMError
 from datapilot_llm.config import LLMSettings
 from datapilot_llm.logger import LLMCallLogger, get_call_logger
-from datapilot_llm.provider import BaseProvider, LLMChunk, LLMResponse
 from datapilot_llm.providers.deepseek import DeepSeekProvider
 from datapilot_llm.providers.qwen import QwenProvider
+
+if TYPE_CHECKING:
+    from datapilot_llm.provider import BaseProvider, LLMResponse
 
 logger = structlog.get_logger(__name__)
 
 
-class Scene(str, enum.Enum):
+class Scene(enum.StrEnum):
     """LLM 使用场景枚举。"""
 
     NL2SQL = "nl2sql"
@@ -58,7 +61,7 @@ MODEL_TO_PROVIDER: dict[str, str] = {
 }
 
 
-class CircuitState(str, enum.Enum):
+class CircuitState(enum.StrEnum):
     """熔断器状态。"""
 
     CLOSED = "closed"
@@ -363,9 +366,7 @@ class LLMRouter:
 
             # 尝试降级到备用模型
             if model in self._scene_models.get(scene, []):
-                fallback_models = [
-                    m for m in self._scene_models[scene] if m != model
-                ]
+                fallback_models = [m for m in self._scene_models[scene] if m != model]
                 for fallback in fallback_models:
                     fallback_cb = self._registry.get_circuit_breaker(fallback)
                     if fallback_cb.is_available():
@@ -484,10 +485,7 @@ class LLMRouter:
 
     def get_all_circuit_states(self) -> dict[str, str]:
         """获取所有模型的熔断器状态。"""
-        return {
-            model: cb.state_name
-            for model, cb in self._registry.circuit_breakers.items()
-        }
+        return {model: cb.state_name for model, cb in self._registry.circuit_breakers.items()}
 
     def configure_scene_models(self, scene: Scene, models: list[str]) -> None:
         """运行时配置场景的模型优先级列表。

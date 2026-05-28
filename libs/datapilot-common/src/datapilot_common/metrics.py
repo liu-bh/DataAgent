@@ -14,10 +14,12 @@
 from __future__ import annotations
 
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from fastapi import FastAPI, Request, Response
 from prometheus_client import Counter, Histogram
+
+if TYPE_CHECKING:
+    from fastapi import FastAPI, Request, Response
 
 # ---------------------------------------------------------------------------
 # 指标定义

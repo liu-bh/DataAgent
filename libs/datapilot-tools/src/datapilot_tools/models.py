@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 
-class ToolCategory(str, enum.Enum):
+class ToolCategory(enum.StrEnum):
     """工具类别枚举。"""
 
     SQL = "sql"

@@ -16,4 +16,5 @@ dependencies = [
     "pytest-asyncio>=0.24",
     "sqlalchemy[asyncio]>=2.0",
     "pydantic>=2.9",
+    "sqlglot>=26.0",
 ]

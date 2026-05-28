@@ -63,10 +63,7 @@ class Aggregate:
         Returns:
             Aggregate 实例。
         """
-        if column == "*":
-            expr = exp.Count(this=exp.Star())
-        else:
-            expr = exp.Count(this=exp.column(column))
+        expr = exp.Count(this=exp.Star()) if column == "*" else exp.Count(this=exp.column(column))
         return cls(expr)
 
     @classmethod
@@ -163,7 +160,7 @@ class _ConditionBuilder:
         """获取底层 sqlglot 条件表达式。"""
         return self._expression
 
-    def and_(self, other: Union[str, exp.Expression, _ConditionBuilder]) -> _ConditionBuilder:
+    def and_(self, other: str | exp.Expression | _ConditionBuilder) -> _ConditionBuilder:
         """AND 组合条件。
 
         Args:
@@ -176,7 +173,7 @@ class _ConditionBuilder:
         combined = exp.And(this=self._expression, expression=other_expr)
         return _ConditionBuilder(combined)
 
-    def or_(self, other: Union[str, exp.Expression, _ConditionBuilder]) -> _ConditionBuilder:
+    def or_(self, other: str | exp.Expression | _ConditionBuilder) -> _ConditionBuilder:
         """OR 组合条件。
 
         Args:
@@ -190,7 +187,7 @@ class _ConditionBuilder:
         return _ConditionBuilder(combined)
 
     @classmethod
-    def _to_expression(cls, value: Union[str, exp.Expression, _ConditionBuilder]) -> exp.Expression:
+    def _to_expression(cls, value: str | exp.Expression | _ConditionBuilder) -> exp.Expression:
         """将各种输入转为 sqlglot 表达式。"""
         if isinstance(value, _ConditionBuilder):
             return value.expression

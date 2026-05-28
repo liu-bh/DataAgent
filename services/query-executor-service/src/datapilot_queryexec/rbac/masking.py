@@ -81,9 +81,7 @@ class DataMasker:
         self._rules.append(rule)
         logger.debug("脱敏规则: 添加自定义规则", column=rule.column_name, mask_type=rule.mask_type)
 
-    def mask_row(
-        self, row: dict[str, Any], columns: list[str]
-    ) -> tuple[dict[str, Any], list[str]]:
+    def mask_row(self, row: dict[str, Any], columns: list[str]) -> tuple[dict[str, Any], list[str]]:
         """对单行数据执行脱敏。
 
         Args:

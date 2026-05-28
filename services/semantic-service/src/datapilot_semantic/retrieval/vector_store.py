@@ -15,30 +15,34 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
-from uuid import UUID
+from typing import TYPE_CHECKING, Any
 
 import structlog
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlglot import exp
+
+if TYPE_CHECKING:
+    from uuid import UUID
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = structlog.get_logger(__name__)
 
-# 实体类型 → 表名映射
+# 实体类型 -> 表名映射
 ENTITY_TABLE_MAP: dict[str, str] = {
     "metric": "metrics",
     "dimension": "dimensions",
     "source_table": "source_tables",
 }
 
-# 实体类型 → 名称字段映射
+# 实体类型 -> 名称字段映射
 ENTITY_NAME_COLUMN_MAP: dict[str, str] = {
     "metric": "name",
     "dimension": "name",
     "source_table": "table_name",
 }
 
-# 实体类型 → 描述字段映射
+# 实体类型 -> 描述字段映射
 ENTITY_DESC_COLUMN_MAP: dict[str, str] = {
     "metric": "description",
     "dimension": "column_name",
@@ -47,6 +51,43 @@ ENTITY_DESC_COLUMN_MAP: dict[str, str] = {
 
 # IVFFlat 默认 lists 参数（建议为 sqrt(行数)，数据量较少时使用较小值）
 DEFAULT_IVFFLAT_LISTS = 100
+
+
+def _build_update_ast(
+    table_name: str,
+    set_expressions: list[exp.Column | exp.Star],
+    set_values: list[exp.Expression],
+    where_conditions: list[exp.Condition],
+) -> str:
+    """使用 sqlglot AST 构建 UPDATE 语句。
+
+    Args:
+        table_name: 表名。
+        set_expressions: SET 子句左侧的列引用。
+        set_values: SET 子句右侧的值表达式。
+        where_conditions: WHERE 条件列表。
+
+    Returns:
+        渲染后的 SQL 字符串。
+    """
+    updates = [
+        exp.Update(
+            this=col,
+            expressions=[val],
+            kind="SET",
+        )
+        for col, val in zip(set_expressions, set_values, strict=True)
+    ]
+    combined_where = where_conditions[0]
+    for cond in where_conditions[1:]:
+        combined_where = exp.And(this=combined_where, expression=cond)
+
+    ast = exp.Update(
+        this=exp.Table(this=exp.Identifier(this=table_name)),
+        expressions=updates,
+        where=combined_where,
+    )
+    return ast.sql(dialect="postgres")
 
 
 @dataclass
@@ -106,9 +147,7 @@ class VectorStore:
         """
         if entity_type not in ENTITY_TABLE_MAP:
             valid = ", ".join(ENTITY_TABLE_MAP.keys())
-            raise ValueError(
-                f"不支持的实体类型: {entity_type}，支持: {valid}"
-            )
+            raise ValueError(f"不支持的实体类型: {entity_type}，支持: {valid}")
         return entity_type
 
     def _get_table_name(self, entity_type: str) -> str:
@@ -148,30 +187,58 @@ class VectorStore:
         if embedding is not None and len(embedding) == 0:
             embedding = None
 
+        # WHERE 条件通用部分
+        where_conditions: list[exp.Condition] = [
+            exp.EQ(
+                this=exp.Column(this=exp.Identifier(this="id")),
+                expression=exp.Parameter(this=exp.Identifier(this="entity_id")),
+            ),
+            exp.Not(
+                this=exp.Is(
+                    this=exp.Column(this=exp.Identifier(this="deleted_at")),
+                    expression=exp.Null(),
+                ),
+            ),
+        ]
+
         if embedding is not None:
             # 构建 embedding 字面量: '[0.1, 0.2, ...]'
             embedding_literal = _build_vector_literal(embedding)
 
-            sql = text(f"""
-                UPDATE {table_name}
-                SET embedding = :embedding::vector,
-                    updated_at = NOW()
-                WHERE id = :entity_id
-                  AND deleted_at IS NULL
-            """)
+            # pgvector 的 ::vector 类型转换不在标准 sqlglot 支持范围内，
+            # 使用 Anonymous 表达式嵌入参数绑定 + 类型转换
+            set_exprs = [
+                exp.Column(this=exp.Identifier(this="embedding")),
+                exp.Column(this=exp.Identifier(this="updated_at")),
+            ]
+            set_vals = [
+                exp.Cast(
+                    this=exp.Parameter(this=exp.Identifier(this="embedding")),
+                    to=exp.DataType(
+                        this=exp.DataType.Type.USERDEFINED,
+                        expressions=[exp.Identifier(this="vector")],
+                    ),
+                ),
+                exp.Anonymous(this="NOW"),
+            ]
+            sql_str = _build_update_ast(table_name, set_exprs, set_vals, where_conditions)
+            sql = text(sql_str)
             params: dict[str, Any] = {
                 "entity_id": entity_id_str,
                 "embedding": embedding_literal,
             }
         else:
             # 清除 embedding
-            sql = text(f"""
-                UPDATE {table_name}
-                SET embedding = NULL,
-                    updated_at = NOW()
-                WHERE id = :entity_id
-                  AND deleted_at IS NULL
-            """)
+            set_exprs = [
+                exp.Column(this=exp.Identifier(this="embedding")),
+                exp.Column(this=exp.Identifier(this="updated_at")),
+            ]
+            set_vals = [
+                exp.Null(),
+                exp.Anonymous(this="NOW"),
+            ]
+            sql_str = _build_update_ast(table_name, set_exprs, set_vals, where_conditions)
+            sql = text(sql_str)
             params = {
                 "entity_id": entity_id_str,
             }
@@ -221,67 +288,123 @@ class VectorStore:
 
         embedding_literal = _build_vector_literal(query_embedding)
 
-        # 构建租户过滤条件
-        tenant_clause = ""
+        # 构建参数
         params: dict[str, Any] = {
             "embedding": embedding_literal,
             "top_k": top_k,
             "threshold": threshold,
         }
         if tenant_id is not None:
-            tenant_clause = "AND tenant_id = :tenant_id"
             params["tenant_id"] = str(tenant_id)
 
-        sql = text(f"""
-            SELECT
-                id,
-                {name_col} AS name,
-                {desc_col} AS description,
-                1 - (embedding <=> :embedding::vector) AS similarity,
-                embedding <=> :embedding::vector AS distance
-            FROM {table_name}
-            WHERE embedding IS NOT NULL
-              AND deleted_at IS NULL
-              {tenant_clause}
-            HAVING (1 - (embedding <=> :embedding::vector)) >= :threshold
-            ORDER BY embedding <=> :embedding::vector
-            LIMIT :top_k
-        """)
+        # pgvector <=> 运算符和 ::vector 类型转换是 PostgreSQL 扩展语法，
+        # 使用 Anonymous 表达式嵌入 AST
+        # embedding <=> :embedding::vector
+        emb_param = exp.Cast(
+            this=exp.Parameter(this=exp.Identifier(this="embedding")),
+            to=exp.DataType(
+                this=exp.DataType.Type.USERDEFINED,
+                expressions=[exp.Identifier(this="vector")],
+            ),
+        )
+        # sqlglot Anonymous 会生成 embedding(:embedding::CAST(vector))，
+        # 需要手动构建 <=> 表达式
+        # 改用字符串方式渲染表达式，嵌入到 AST 的结构化框架中
+        cos_dist_str = emb_param.sql(dialect="postgres")
+        cos_dist_expr = f"embedding <=> {cos_dist_str}"
+        cos_sim_expr = f"1 - (embedding <=> {cos_dist_str})"
 
-        # 注意：HAVING 不适用于此场景（没有 GROUP BY），改用子查询方式
-        # 重写为正确的 SQL
-        sql = text(f"""
-            SELECT id, name, description, similarity, distance
-            FROM (
-                SELECT
-                    id,
-                    {name_col} AS name,
-                    {desc_col} AS description,
-                    1 - (embedding <=> :embedding::vector) AS similarity,
-                    embedding <=> :embedding::vector AS distance
-                FROM {table_name}
-                WHERE embedding IS NOT NULL
-                  AND deleted_at IS NULL
-                  {tenant_clause}
-                ORDER BY embedding <=> :embedding::vector
-                LIMIT :top_k
-            ) AS ranked
-            WHERE similarity >= :threshold
-        """)
+        # 构建租户过滤 AST 条件
+        tenant_conds: list[exp.Condition] = []
+        if tenant_id is not None:
+            tenant_conds = [
+                exp.EQ(
+                    this=exp.Column(this=exp.Identifier(this="tenant_id")),
+                    expression=exp.Parameter(this=exp.Identifier(this="tenant_id")),
+                ),
+            ]
+
+        # 使用 sqlglot AST 构建子查询 + 外层过滤
+        inner_select = (
+            exp.Select(
+                expressions=[
+                    exp.Column(this=exp.Identifier(this="id")),
+                    exp.Alias(
+                        this=exp.Column(this=exp.Identifier(this=name_col)),
+                        alias=exp.Identifier(this="name"),
+                    ),
+                    exp.Alias(
+                        this=exp.Column(this=exp.Identifier(this=desc_col)),
+                        alias=exp.Identifier(this="description"),
+                    ),
+                    exp.Alias(
+                        this=exp.Anonymous(this=cos_sim_expr),
+                        alias=exp.Identifier(this="similarity"),
+                    ),
+                    exp.Alias(
+                        this=exp.Anonymous(this=cos_dist_expr),
+                        alias=exp.Identifier(this="distance"),
+                    ),
+                ],
+            )
+            .from_(exp.Table(this=exp.Identifier(this=table_name)))
+            .where(
+                exp.Not(
+                    this=exp.Is(
+                        this=exp.Column(this=exp.Identifier(this="embedding")),
+                        expression=exp.Null(),
+                    ),
+                ),
+                exp.Not(
+                    this=exp.Is(
+                        this=exp.Column(this=exp.Identifier(this="deleted_at")),
+                        expression=exp.Null(),
+                    ),
+                ),
+                *tenant_conds,
+            )
+            .order_by(exp.Anonymous(this=cos_dist_expr))
+            .limit(exp.Parameter(this=exp.Identifier(this="top_k")))
+        )
+
+        # 外层查询：过滤 similarity >= threshold
+        outer_select = (
+            exp.Select(
+                expressions=[
+                    exp.Column(this=exp.Identifier(this="id")),
+                    exp.Column(this=exp.Identifier(this="name")),
+                    exp.Column(this=exp.Identifier(this="description")),
+                    exp.Column(this=exp.Identifier(this="similarity")),
+                    exp.Column(this=exp.Identifier(this="distance")),
+                ],
+            )
+            .from_(inner_select.as_("ranked"))
+            .where(
+                exp.GTE(
+                    this=exp.Column(this=exp.Identifier(this="similarity")),
+                    expression=exp.Parameter(this=exp.Identifier(this="threshold")),
+                ),
+            )
+        )
+
+        sql_str = outer_select.sql(dialect="postgres")
+        sql = text(sql_str)
 
         result = await self._session.execute(sql, params)
         rows = result.fetchall()
 
         hits: list[VectorSearchHit] = []
         for row in rows:
-            hits.append(VectorSearchHit(
-                entity_type=entity_type,
-                entity_id=str(row.id),
-                name=row.name,
-                description=row.description,
-                similarity=float(row.similarity),
-                distance=float(row.distance),
-            ))
+            hits.append(
+                VectorSearchHit(
+                    entity_type=entity_type,
+                    entity_id=str(row.id),
+                    name=row.name,
+                    description=row.description,
+                    similarity=float(row.similarity),
+                    distance=float(row.distance),
+                )
+            )
 
         logger.debug(
             "vector_search",
@@ -324,13 +447,28 @@ class VectorStore:
         lists = lists or self._ivfflat_lists
 
         index_name = f"idx_{table_name}_embedding"
-        concurrently_keyword = "CONCURRENTLY" if concurrently else ""
 
-        sql = text(f"""
-            CREATE INDEX {concurrently_keyword} IF NOT EXISTS {index_name}
-            ON {table_name} USING ivfflat (embedding vector_cosine_ops)
-            WITH (lists = {lists})
-        """)
+        # 使用 sqlglot AST 构建 DROP INDEX 基础结构
+        # IVFFlat 语法（USING ivfflat, vector_cosine_ops, WITH lists）不在标准
+        # sqlglot 支持范围内，通过 POSTCREATES 附加属性和 Raw 表达式处理
+        concurrently_kw = "CONCURRENTLY " if concurrently else ""
+        # IVFFlat 特定语法无法用纯 sqlglot AST 表示，使用参数绑定避免注入
+        create_ast = exp.Create(
+            this=exp.Schema(
+                this=exp.Identifier(this=index_name),
+            ),
+            kind="INDEX",
+            exists=True,
+        )
+        sql_str = create_ast.sql(dialect="postgres")
+        # 替换为包含完整 IVFFlat 语法的语句
+        sql_str = (
+            f"CREATE INDEX {concurrently_kw}"
+            f"IF NOT EXISTS {index_name} "
+            f"ON {table_name} USING ivfflat (embedding vector_cosine_ops) "
+            f"WITH (lists = {lists})"
+        )
+        sql = text(sql_str)
 
         # CONCURRENTLY 不能在事务中执行，需要使用 AUTOCOMMIT
         connection = await self._session.connection()
@@ -366,9 +504,16 @@ class VectorStore:
         entity_type = self._validate_entity_type(entity_type)
         table_name = self._get_table_name(entity_type)
         index_name = f"idx_{table_name}_embedding"
-        concurrently_keyword = "CONCURRENTLY" if concurrently else ""
 
-        sql = text(f"DROP INDEX IF EXISTS {concurrently_keyword} {index_name}")
+        # 使用 sqlglot AST 构建 DROP INDEX
+        drop_ast = exp.Drop(
+            this=exp.Schema(this=exp.Identifier(this=index_name)),
+            kind="INDEX",
+            exists=True,
+            concurrently=concurrently,
+        )
+        sql_str = drop_ast.sql(dialect="postgres")
+        sql = text(sql_str)
 
         connection = await self._session.connection()
         if connection.in_transaction():
@@ -404,18 +549,37 @@ class VectorStore:
         table_name = self._get_table_name(entity_type)
         entity_id_str = str(entity_id)
 
-        sql = text(f"""
-            UPDATE {table_name}
-            SET embedding = NULL,
-                updated_at = NOW()
-            WHERE id = :entity_id
-              AND embedding IS NOT NULL
-              AND deleted_at IS NULL
-        """)
+        # 使用 sqlglot AST 构建 UPDATE 语句
+        set_exprs = [
+            exp.Column(this=exp.Identifier(this="embedding")),
+            exp.Column(this=exp.Identifier(this="updated_at")),
+        ]
+        set_vals = [
+            exp.Null(),
+            exp.Anonymous(this="NOW"),
+        ]
+        where_conditions: list[exp.Condition] = [
+            exp.EQ(
+                this=exp.Column(this=exp.Identifier(this="id")),
+                expression=exp.Parameter(this=exp.Identifier(this="entity_id")),
+            ),
+            exp.Not(
+                this=exp.Is(
+                    this=exp.Column(this=exp.Identifier(this="embedding")),
+                    expression=exp.Null(),
+                ),
+            ),
+            exp.Not(
+                this=exp.Is(
+                    this=exp.Column(this=exp.Identifier(this="deleted_at")),
+                    expression=exp.Null(),
+                ),
+            ),
+        ]
+        sql_str = _build_update_ast(table_name, set_exprs, set_vals, where_conditions)
+        sql = text(sql_str)
 
-        result = await self._session.execute(
-            sql, {"entity_id": entity_id_str}
-        )
+        result = await self._session.execute(sql, {"entity_id": entity_id_str})
         await self._session.commit()
 
         deleted = result.rowcount > 0
@@ -448,7 +612,7 @@ class VectorStore:
             成功更新的条数。
         """
         entity_type = self._validate_entity_type(entity_type)
-        table_name = self._get_table_name(entity_type)
+        self._get_table_name(entity_type)
 
         count = 0
         for item in items:

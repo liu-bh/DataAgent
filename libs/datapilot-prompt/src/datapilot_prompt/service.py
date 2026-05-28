@@ -6,23 +6,27 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 import structlog
-from sqlalchemy import select, func
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import func, select
 
 from datapilot_common.exceptions import NotFoundError, ValidationError
 
-from .ab_testing import ABTestingManager
-from .models import PromptVersion, VALID_SCENES
+from .models import VALID_SCENES, PromptVersion
 from .schemas import (
-    PromptResponse,
-    PromptActivateResponse,
     ABTestResults,
     ABTestVersionMetrics,
+    PromptActivateResponse,
+    PromptResponse,
 )
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    from .ab_testing import ABTestingManager
 
 logger = structlog.get_logger(__name__)
 
@@ -108,8 +112,8 @@ class PromptManager:
             content=content,
             is_active=is_first_version,
             ab_test_traffic=ab_test_traffic,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
         )
         self._session.add(prompt)
         await self._session.flush()
@@ -289,12 +293,8 @@ class PromptManager:
             )
 
         # 获取统计数据
-        stats_active = await self._ab_testing.get_statistics(
-            UUID(str(active_prompt.id))
-        )
-        stats_ab = await self._ab_testing.get_statistics(
-            UUID(str(ab_prompt.id))
-        )
+        stats_active = await self._ab_testing.get_statistics(UUID(str(active_prompt.id)))
+        stats_ab = await self._ab_testing.get_statistics(UUID(str(ab_prompt.id)))
 
         # 对比
         recommendation, confidence = self._ab_testing.compare_versions(

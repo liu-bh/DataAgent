@@ -152,17 +152,16 @@ def _walk_ast_for_compatibility(
         issues: 收集兼容性问题的列表。
     """
     # 检查 WITH RECURSIVE（sqlglot v30 中 With 节点有 recursive 参数）
-    if isinstance(node, With):
-        if node.args.get("recursive"):
-            feature_key = "with_recursive"
-            if feature_key in unsupported:
-                issues.append(
-                    CompatibilityIssue(
-                        feature=feature_key,
-                        description=unsupported[feature_key],
-                        severity="error",
-                    )
+    if isinstance(node, With) and node.args.get("recursive"):
+        feature_key = "with_recursive"
+        if feature_key in unsupported:
+            issues.append(
+                CompatibilityIssue(
+                    feature=feature_key,
+                    description=unsupported[feature_key],
+                    severity="error",
                 )
+            )
 
     # 检查隐式多表 JOIN（逗号连接，如 FROM a, b）
     # sqlglot v30 中逗号连接解析为 Join 节点（kind=None, side=None）

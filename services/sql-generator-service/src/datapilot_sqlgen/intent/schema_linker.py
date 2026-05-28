@@ -153,9 +153,7 @@ class SchemaLinker:
         linked_metrics = self._match_metrics(
             parsed_intent.target_metrics, tenant_id, semantic_model_id
         )
-        unmatched_metrics = set(parsed_intent.target_metrics) - {
-            m.name for m in linked_metrics
-        }
+        unmatched_metrics = set(parsed_intent.target_metrics) - {m.name for m in linked_metrics}
         if unmatched_metrics:
             warnings.append(f"以下指标未匹配到语义层: {', '.join(unmatched_metrics)}")
 
@@ -163,9 +161,7 @@ class SchemaLinker:
         linked_dimensions = self._match_dimensions(
             parsed_intent.target_dimensions, tenant_id, semantic_model_id
         )
-        unmatched_dims = set(parsed_intent.target_dimensions) - {
-            d.name for d in linked_dimensions
-        }
+        unmatched_dims = set(parsed_intent.target_dimensions) - {d.name for d in linked_dimensions}
         if unmatched_dims:
             warnings.append(f"以下维度未匹配到语义层: {', '.join(unmatched_dims)}")
 
@@ -192,9 +188,7 @@ class SchemaLinker:
         )
 
         # 7. 构建过滤条件
-        resolved_filters = self._resolve_filters(
-            parsed_intent.filters, linked_dimensions
-        )
+        resolved_filters = self._resolve_filters(parsed_intent.filters, linked_dimensions)
 
         logger.info(
             "Schema Linking 完成",
@@ -344,9 +338,7 @@ class SchemaLinker:
                     break
 
             # 模糊匹配
-            fuzzy_score = SequenceMatcher(
-                None, candidate.name.lower(), name.lower()
-            ).ratio()
+            fuzzy_score = SequenceMatcher(None, candidate.name.lower(), name.lower()).ratio()
             if fuzzy_score >= _FUZZY_THRESHOLD and fuzzy_score > best_score:
                 best_match = candidate
                 best_score = fuzzy_score
@@ -556,9 +548,7 @@ class SchemaLinker:
 
     # ---- Mock 数据方法 ----
 
-    def _get_mock_metrics(
-        self, tenant_id: str, semantic_model_id: str | None
-    ) -> list[_MockMetric]:
+    def _get_mock_metrics(self, tenant_id: str, semantic_model_id: str | None) -> list[_MockMetric]:
         """获取 Mock 指标数据（实际应查询 DB）。"""
         # TODO: 替换为实际 DB 查询
         return [

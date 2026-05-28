@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import structlog
 
-from datapilot_queryexec.rbac.models import PermissionRule, RBACCheckResult
 from datapilot_queryexec.rbac.column_filter import ColumnFilter
 from datapilot_queryexec.rbac.masking import DataMasker
+from datapilot_queryexec.rbac.models import PermissionRule, RBACCheckResult
 from datapilot_queryexec.rbac.operation_guard import OperationGuard
 from datapilot_queryexec.rbac.row_filter import RowFilter
 
@@ -71,9 +71,7 @@ class RBACChecker:
         )
 
         # 第一步：操作权限检查
-        allowed, blocked_reason = self._operation_guard.check(
-            sql, permission.allowed_operations
-        )
+        allowed, blocked_reason = self._operation_guard.check(sql, permission.allowed_operations)
         if not allowed:
             logger.info(
                 "RBAC 检查: 操作权限拒绝",
@@ -136,10 +134,7 @@ class RBACChecker:
         # 返回检查结果
         # 脱敏在查询结果返回时由 DataMasker.mask_result() 执行，
         # 这里仅标记隐藏列以便后续处理
-        masked_columns = [
-            col for col in permission.hidden_columns
-            if col not in removed_columns
-        ]
+        masked_columns = [col for col in permission.hidden_columns if col not in removed_columns]
 
         result = RBACCheckResult(
             allowed=True,

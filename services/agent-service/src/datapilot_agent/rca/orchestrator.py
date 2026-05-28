@@ -1,4 +1,5 @@
 """RCA 分析编排器。"""
+
 from __future__ import annotations
 
 import time
@@ -88,10 +89,12 @@ class RCAOrchestrator:
         if dimensions is None:
             # 默认取 current_data 中除 "value" 外的键作为维度
             dimension_keys = [
-                k for k in current_data.keys() if k != "value" and isinstance(current_data[k], dict)
+                k for k in current_data if k != "value" and isinstance(current_data[k], dict)
             ]
         else:
-            dimension_keys = [d.get("name", d) if isinstance(d, dict) else str(d) for d in dimensions]
+            dimension_keys = [
+                d.get("name", d) if isinstance(d, dict) else str(d) for d in dimensions
+            ]
 
         drill_downs: list[Any] = []
         for dim_key in dimension_keys:

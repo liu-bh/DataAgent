@@ -120,69 +120,85 @@ def _infer_chart_type(
     if time_fields:
         x_field = time_fields[0]
         y_fields = numeric_fields[:3]
-        recommendations.append({
-            "type": "line",
-            "confidence": 0.9,
-            "title": "趋势图",
-            "description": "时间维度的趋势变化",
-        })
+        recommendations.append(
+            {
+                "type": "line",
+                "confidence": 0.9,
+                "title": "趋势图",
+                "description": "时间维度的趋势变化",
+            }
+        )
         if len(numeric_fields) > 1:
-            recommendations.append({
-                "type": "bar",
-                "confidence": 0.75,
-                "title": "对比柱状图",
-                "description": "不同指标间的对比",
-            })
+            recommendations.append(
+                {
+                    "type": "bar",
+                    "confidence": 0.75,
+                    "title": "对比柱状图",
+                    "description": "不同指标间的对比",
+                }
+            )
     elif categorical_fields and numeric_fields:
         x_field = categorical_fields[0]
         y_fields = numeric_fields[:3]
         if len(rows) <= 6 and len(categorical_fields) == 1 and len(numeric_fields) == 1:
-            recommendations.append({
-                "type": "pie",
-                "confidence": 0.85,
-                "title": "占比饼图",
-                "description": "分类占比分布",
-            })
-        recommendations.append({
-            "type": "bar",
-            "confidence": 0.8,
-            "title": "柱状图",
-            "description": "分类维度的数值对比",
-        })
+            recommendations.append(
+                {
+                    "type": "pie",
+                    "confidence": 0.85,
+                    "title": "占比饼图",
+                    "description": "分类占比分布",
+                }
+            )
+        recommendations.append(
+            {
+                "type": "bar",
+                "confidence": 0.8,
+                "title": "柱状图",
+                "description": "分类维度的数值对比",
+            }
+        )
         if len(numeric_fields) >= 2:
-            recommendations.append({
-                "type": "scatter",
-                "confidence": 0.7,
-                "title": "散点图",
-                "description": "多个数值字段间的关联",
-            })
+            recommendations.append(
+                {
+                    "type": "scatter",
+                    "confidence": 0.7,
+                    "title": "散点图",
+                    "description": "多个数值字段间的关联",
+                }
+            )
     elif numeric_fields and len(numeric_fields) >= 2:
         x_field = numeric_fields[0]
         y_fields = numeric_fields[1:3]
-        recommendations.append({
-            "type": "scatter",
-            "confidence": 0.75,
-            "title": "散点图",
-            "description": "数值字段间的关联分布",
-        })
-        recommendations.append({
-            "type": "bar",
-            "confidence": 0.6,
-            "title": "柱状图",
-            "description": "数值对比",
-        })
+        recommendations.append(
+            {
+                "type": "scatter",
+                "confidence": 0.75,
+                "title": "散点图",
+                "description": "数值字段间的关联分布",
+            }
+        )
+        recommendations.append(
+            {
+                "type": "bar",
+                "confidence": 0.6,
+                "title": "柱状图",
+                "description": "数值对比",
+            }
+        )
     else:
         # 默认推荐
         if columns:
             x_field = columns[0].get("name", "")
         if len(columns) > 1:
             y_fields = [columns[1].get("name", "")]
-        recommendations.append({
-            "type": "bar",
-            "confidence": 0.5,
-            "title": "柱状图",
-            "description": "默认推荐柱状图",
-        })
+        recommendations.append(
+            {
+                "type": "bar",
+                "confidence": 0.5,
+                "title": "柱状图",
+                "description": "默认推荐柱状图",
+            }
+        )
 
     # 根据用户问题微调
     if user_question:
@@ -191,21 +207,27 @@ def _infer_chart_type(
             # 确保趋势图优先
             trend_exists = any(r["type"] == "line" for r in recommendations)
             if not trend_exists:
-                recommendations.insert(0, {
-                    "type": "line",
-                    "confidence": 0.8,
-                    "title": "趋势图",
-                    "description": "根据用户问题推荐的趋势图",
-                })
+                recommendations.insert(
+                    0,
+                    {
+                        "type": "line",
+                        "confidence": 0.8,
+                        "title": "趋势图",
+                        "description": "根据用户问题推荐的趋势图",
+                    },
+                )
         if "占比" in question_lower or "比例" in user_question:
             pie_exists = any(r["type"] == "pie" for r in recommendations)
             if not pie_exists:
-                recommendations.insert(0, {
-                    "type": "pie",
-                    "confidence": 0.8,
-                    "title": "占比饼图",
-                    "description": "根据用户问题推荐的占比图",
-                })
+                recommendations.insert(
+                    0,
+                    {
+                        "type": "pie",
+                        "confidence": 0.8,
+                        "title": "占比饼图",
+                        "description": "根据用户问题推荐的占比图",
+                    },
+                )
 
     return ChartRecommendResponse(
         recommended_types=recommendations,
@@ -243,31 +265,37 @@ def _build_echarts_option(
     colors = ["#5470c6", "#91cc75", "#fac858", "#ee6666", "#73c0de"]
 
     for idx, y_field in enumerate(y_fields):
-        series.append({
-            "name": y_field,
-            "type": chart_type,
-            "data": [row.get(y_field, 0) for row in rows],
-            "itemStyle": {"color": colors[idx % len(colors)]},
-        })
+        series.append(
+            {
+                "name": y_field,
+                "type": chart_type,
+                "data": [row.get(y_field, 0) for row in rows],
+                "itemStyle": {"color": colors[idx % len(colors)]},
+            }
+        )
 
     # 饼图特殊处理
     if chart_type == "pie":
         pie_data: list[dict[str, Any]] = []
         for row in rows:
-            pie_data.append({
-                "name": str(row.get(x_field, "")),
-                "value": row.get(y_fields[0], 0) if y_fields else 0,
-            })
+            pie_data.append(
+                {
+                    "name": str(row.get(x_field, "")),
+                    "value": row.get(y_fields[0], 0) if y_fields else 0,
+                }
+            )
         return {
             "title": {"text": title, "left": "center"},
             "tooltip": {"trigger": "item", "formatter": "{a} <br/>{b}: {c} ({d}%)"},
             "legend": {"orient": "vertical", "left": "left"},
-            "series": [{
-                "name": y_fields[0] if y_fields else "数值",
-                "type": "pie",
-                "radius": "50%",
-                "data": pie_data,
-            }],
+            "series": [
+                {
+                    "name": y_fields[0] if y_fields else "数值",
+                    "type": "pie",
+                    "radius": "50%",
+                    "data": pie_data,
+                }
+            ],
         }
 
     option: dict[str, Any] = {

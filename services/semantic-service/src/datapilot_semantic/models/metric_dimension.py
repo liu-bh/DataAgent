@@ -30,12 +30,12 @@ class MetricDimension(Base):
     )
 
     # --- 关联 ---
-    metric: Mapped["Metric"] = relationship(  # noqa: F821
+    metric: Mapped[Metric] = relationship(  # noqa: F821
         "Metric",
         back_populates="metric_dimensions",
         lazy="noload",
     )
-    dimension: Mapped["Dimension"] = relationship(  # noqa: F821
+    dimension: Mapped[Dimension] = relationship(  # noqa: F821
         "Dimension",
         back_populates="metric_dimensions",
         lazy="noload",

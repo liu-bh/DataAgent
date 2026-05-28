@@ -16,6 +16,7 @@ from typing import Literal
 # 语义上下文
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class ColumnInfo:
     """列信息。"""
@@ -111,9 +112,7 @@ class SemanticContext:
             sections.append("\n## 可用指标")
             for metric in self.metrics:
                 unit_str = f"（{metric.unit}）" if metric.unit else ""
-                sections.append(
-                    f"- {metric.name}{unit_str} = {metric.calculation}"
-                )
+                sections.append(f"- {metric.name}{unit_str} = {metric.calculation}")
 
         # 可用维度
         if self.dimensions:
@@ -131,6 +130,7 @@ class SemanticContext:
 # ---------------------------------------------------------------------------
 # NL2SQL 结果
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class NL2SQLResult:
@@ -153,6 +153,7 @@ class NL2SQLResult:
 # Few-shot 示例
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class FewShotExample:
     """Few-shot 示例。"""
@@ -165,7 +166,4 @@ class FewShotExample:
 
     def to_prompt_text(self) -> str:
         """格式化为 Prompt 可用的文本。"""
-        return (
-            f"问题：{self.question}\n"
-            f"SQL：\n{self.sql}"
-        )
+        return f"问题：{self.question}\nSQL：\n{self.sql}"

@@ -21,10 +21,14 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import sqlglot
-from sqlglot.expressions import Expression
 
 from datapilot_sql.dialect import Dialect
+
+if TYPE_CHECKING:
+    from sqlglot.expressions import Expression
 
 
 class SQLRenderer:

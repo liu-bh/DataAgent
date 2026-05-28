@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import SettingsConfigDict
 
 from datapilot_common.config import BaseAppSettings
 

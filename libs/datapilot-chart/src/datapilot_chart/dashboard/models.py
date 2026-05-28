@@ -162,12 +162,8 @@ class DashboardLayout:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> DashboardLayout:
         """从字典构建 Dashboard 布局。"""
-        panels = [
-            DashboardPanel.from_dict(p) for p in data.get("panels", [])
-        ]
-        filters = [
-            DashboardFilterDef.from_dict(f) for f in data.get("filters", [])
-        ]
+        panels = [DashboardPanel.from_dict(p) for p in data.get("panels", [])]
+        filters = [DashboardFilterDef.from_dict(f) for f in data.get("filters", [])]
         return cls(
             dashboard_id=data["dashboard_id"],
             title=data["title"],

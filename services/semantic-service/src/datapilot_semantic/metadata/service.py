@@ -8,16 +8,13 @@
 from __future__ import annotations
 
 import math
-from datetime import datetime, timezone
-from typing import Callable, Optional
-from uuid import UUID
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 import structlog
 from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from datapilot_common.exceptions import NotFoundError, ValidationError
-
 from datapilot_semantic.metadata.datasource_pool import encrypt_password, test_connection
 from datapilot_semantic.metadata.models import DataSource, DataSourceHealth, SourceTable
 from datapilot_semantic.metadata.schemas import (
@@ -29,8 +26,14 @@ from datapilot_semantic.metadata.schemas import (
     SourceTableResponse,
     SyncResultResponse,
 )
-from datapilot_semantic.models.schemas import PaginatedResponse, PaginationMeta
 from datapilot_semantic.metadata.sync_worker import sync_metadata
+from datapilot_semantic.models.schemas import PaginatedResponse, PaginationMeta
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from uuid import UUID
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = structlog.get_logger(__name__)
 
@@ -57,7 +60,7 @@ class DataSourceService:
         self,
         db: AsyncSession,
         datasource_id: UUID,
-        tenant_id: Optional[UUID] = None,
+        tenant_id: UUID | None = None,
     ) -> DataSource:
         """获取数据源，不存在则抛出 NotFoundError。
 
@@ -154,8 +157,8 @@ class DataSourceService:
         self,
         db: AsyncSession,
         *,
-        type: Optional[str] = None,
-        status: Optional[str] = None,
+        type: str | None = None,
+        status: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> PaginatedResponse[DataSourceResponse]:
@@ -172,8 +175,8 @@ class DataSourceService:
             分页的数据源响应列表。
         """
         # 查询总数
-        count_stmt = select(func.count()).select_from(DataSource).where(
-            DataSource.deleted_at.is_(None)
+        count_stmt = (
+            select(func.count()).select_from(DataSource).where(DataSource.deleted_at.is_(None))
         )
         if type is not None:
             count_stmt = count_stmt.where(DataSource.type == type)
@@ -198,10 +201,7 @@ class DataSourceService:
         result = await db.execute(data_stmt)
         datasources = result.scalars().all()
 
-        data = [
-            DataSourceResponse.model_validate(ds, from_attributes=True)
-            for ds in datasources
-        ]
+        data = [DataSourceResponse.model_validate(ds, from_attributes=True) for ds in datasources]
 
         return PaginatedResponse[DataSourceResponse](
             data=data,
@@ -268,7 +268,7 @@ class DataSourceService:
             NotFoundError: 数据源不存在。
         """
         datasource = await self._get_datasource_or_raise(db, datasource_id)
-        datasource.deleted_at = datetime.now(timezone.utc)
+        datasource.deleted_at = datetime.now(UTC)
         datasource.status = "disabled"
 
         await db.flush()
@@ -280,7 +280,7 @@ class DataSourceService:
         datasource_id: UUID,
         db: AsyncSession,
         *,
-        schema_name: Optional[str] = None,
+        schema_name: str | None = None,
         force_full: bool = False,
     ) -> SyncResultResponse:
         """触发元数据同步。
@@ -351,7 +351,7 @@ class DataSourceService:
         # 尝试连接测试（API 类型和密码未知情况下跳过）
         is_connected = test_connection(config) if datasource.type != "api" else True
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         health_status = "healthy" if is_connected else "down"
 
         # 创建健康记录
@@ -382,7 +382,7 @@ class DataSourceService:
         datasource_id: UUID,
         db: AsyncSession,
         *,
-        schema_name: Optional[str] = None,
+        schema_name: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> list[SourceTableResponse]:
@@ -421,6 +421,4 @@ class DataSourceService:
         result = await db.execute(stmt)
         tables = result.scalars().all()
 
-        return [
-            SourceTableResponse.model_validate(t, from_attributes=True) for t in tables
-        ]
+        return [SourceTableResponse.model_validate(t, from_attributes=True) for t in tables]

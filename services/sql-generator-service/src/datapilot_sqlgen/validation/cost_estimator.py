@@ -29,13 +29,13 @@ _COST_THRESHOLD_HIGH = 100000
 
 # 启发式行数因子（用于无连接时的估算）
 _HEURISTIC_MULTIPLIERS: dict[str, float] = {
-    "count": 1.0,       # COUNT 聚合通常只返回 1 行
-    "sum": 1.0,         # SUM 聚合通常只返回 1 行
-    "avg": 1.0,         # AVG 聚合通常只返回 1 行
-    "min": 1.0,         # MIN 聚合通常只返回 1 行
-    "max": 1.0,         # MAX 聚合通常只返回 1 行
+    "count": 1.0,  # COUNT 聚合通常只返回 1 行
+    "sum": 1.0,  # SUM 聚合通常只返回 1 行
+    "avg": 1.0,  # AVG 聚合通常只返回 1 行
+    "min": 1.0,  # MIN 聚合通常只返回 1 行
+    "max": 1.0,  # MAX 聚合通常只返回 1 行
     "group_by": 100.0,  # GROUP BY 通常返回中等行数
-    "join": 500.0,      # JOIN 可能产生较多行
+    "join": 500.0,  # JOIN 可能产生较多行
     "subquery": 200.0,  # 子查询可能增加行数
     "plain_select": 10000.0,  # 普通查询默认假设行数
 }
@@ -79,7 +79,7 @@ class SQLCostEstimator:
         """使用数据库连接执行 EXPLAIN ANALYZE 获取成本预估。"""
         try:
             from sqlalchemy import text
-            from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+            from sqlalchemy.ext.asyncio import create_async_engine
 
             engine = create_async_engine(self._connection_url)
 
@@ -96,9 +96,7 @@ class SQLCostEstimator:
                     try:
                         result = await conn.execute(text(explain_sql))
                         rows = result.fetchall()
-                        explain_output = "\n".join(
-                            str(row) for row in rows
-                        )
+                        explain_output = "\n".join(str(row) for row in rows)
                         return self._parse_explain_analyze(explain_output)
                     except Exception as exc:  # noqa: BLE001
                         logger.warning(
@@ -259,22 +257,20 @@ class SQLCostEstimator:
             estimated_rows = int(rows_match.group(1))
 
         # PostgreSQL 格式: "actual time=0.123..0.456" 或 "Execution Time: 12.345 ms"
-        time_match = re.search(
-            r"(?:actual\s+)?time\s*=\s*[\d.]+\.\.([\d.]+)", explain_output
-        )
+        time_match = re.search(r"(?:actual\s+)?time\s*=\s*[\d.]+\.\.([\d.]+)", explain_output)
         if time_match:
             estimated_time_ms = float(time_match.group(1))
 
         if estimated_time_ms == 0.0:
-            exec_match = re.search(
-                r"Execution Time:\s*([\d.]+)\s*ms", explain_output
-            )
+            exec_match = re.search(r"Execution Time:\s*([\d.]+)\s*ms", explain_output)
             if exec_match:
                 estimated_time_ms = float(exec_match.group(1))
 
         # MySQL 格式: "rows examined N" 或通过 "cost" 提示
         if estimated_rows == 0:
-            mysql_rows = re.search(r"rows(?:\s+examined)?\s*[:=]\s*(\d+)", explain_output, re.IGNORECASE)
+            mysql_rows = re.search(
+                r"rows(?:\s+examined)?\s*[:=]\s*(\d+)", explain_output, re.IGNORECASE
+            )
             if mysql_rows:
                 estimated_rows = int(mysql_rows.group(1))
 

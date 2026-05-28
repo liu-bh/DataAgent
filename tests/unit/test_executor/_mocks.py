@@ -22,7 +22,7 @@ class FakeDAGraph:
         self.dag_id = dag_id
         self.nodes: dict[str, MockDAGNode] = nodes or {}
 
-    def topological_levels(self) -> list:
+    def topological_sort(self) -> list:
         """返回拓扑排序的层级列表。"""
         if not self.nodes:
             return []

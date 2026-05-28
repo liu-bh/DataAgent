@@ -155,7 +155,9 @@ class SQLValidationOrchestrator:
             if not isinstance(ast, valid_root_types):
                 return {
                     "valid": False,
-                    "errors": [f"SQL 语法不正确，解析结果为 {type(ast).__name__} 而非合法 SQL 语句"],
+                    "errors": [
+                        f"SQL 语法不正确，解析结果为 {type(ast).__name__} 而非合法 SQL 语句"
+                    ],
                     "warnings": warnings,
                 }
 

@@ -62,9 +62,7 @@ class DashboardBuilder:
 
         return layout
 
-    def add_panel(
-        self, layout: DashboardLayout, panel: DashboardPanel
-    ) -> None:
+    def add_panel(self, layout: DashboardLayout, panel: DashboardPanel) -> None:
         """添加面板到 Dashboard。
 
         Args:
@@ -73,9 +71,7 @@ class DashboardBuilder:
         """
         layout.panels.append(panel)
 
-    def add_filter(
-        self, layout: DashboardLayout, filter_def: DashboardFilterDef
-    ) -> None:
+    def add_filter(self, layout: DashboardLayout, filter_def: DashboardFilterDef) -> None:
         """添加过滤器到 Dashboard。
 
         Args:
@@ -92,9 +88,7 @@ class DashboardBuilder:
         Args:
             layout: 要排列的 Dashboard 布局。
         """
-        positions = self._layout_engine.calculate_positions(
-            layout.panels, layout.columns
-        )
+        positions = self._layout_engine.calculate_positions(layout.panels, layout.columns)
         pos_map = {p["panel_id"]: p for p in positions}
         for panel in layout.panels:
             if panel.panel_id in pos_map:
@@ -103,9 +97,7 @@ class DashboardBuilder:
                     "col": pos_map[panel.panel_id]["col"],
                 }
 
-    def remove_panel(
-        self, layout: DashboardLayout, panel_id: str
-    ) -> bool:
+    def remove_panel(self, layout: DashboardLayout, panel_id: str) -> bool:
         """移除面板。
 
         Args:
@@ -123,9 +115,7 @@ class DashboardBuilder:
                 return True
         return False
 
-    def reorder_panels(
-        self, layout: DashboardLayout, panel_ids: list[str]
-    ) -> None:
+    def reorder_panels(self, layout: DashboardLayout, panel_ids: list[str]) -> None:
         """重新排列面板顺序。
 
         按照 panel_ids 给定的顺序重新排列面板，不在列表中的面板追加到末尾。

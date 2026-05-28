@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import structlog
@@ -49,7 +49,7 @@ class MemoryManager:
         metadata: dict[str, Any] | None = None,
     ) -> ConversationTurn:
         """添加对话轮次。"""
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         tokens = self._context_window.estimate_tokens(content)
 
         turn = ConversationTurn(
@@ -93,9 +93,7 @@ class MemoryManager:
             max_tokens=self._context_window.max_tokens,
         )
 
-    def build_messages(
-        self, session_id: str, system_prompt: str = ""
-    ) -> list[dict]:
+    def build_messages(self, session_id: str, system_prompt: str = "") -> list[dict]:
         """构建 LLM 消息列表。"""
         turns = self._turns.get(session_id, [])
         memories = self._store.list_by_session(session_id)
@@ -115,7 +113,7 @@ class MemoryManager:
         ttl_seconds: float = 3600.0,
     ) -> str:
         """添加记忆条目。"""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         entry_id = str(uuid.uuid4())
 
         expires_at = ""

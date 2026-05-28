@@ -16,6 +16,8 @@ from datapilot_dag.executor.result import DAGResult, TaskResult, TaskStatus
 if TYPE_CHECKING:
     from datapilot_dag.models import DAGNode, DAGraph
 
+from datapilot_dag.executor.registry import ExecutorRegistry
+
 logger = structlog.get_logger(__name__)
 
 
@@ -39,8 +41,6 @@ class DAGScheduler:
         max_retry: int = 3,
         task_timeout: float = 30.0,
     ) -> None:
-        from datapilot_dag.executor.registry import ExecutorRegistry
-
         self._registry = registry or ExecutorRegistry()
         # 未传入自定义注册表时，注册默认执行器
         if registry is None:
@@ -86,12 +86,10 @@ class DAGScheduler:
 
         try:
             # 拓扑排序获取层级
-            levels = dag.topological_levels()
+            levels = dag.topological_sort()
 
             if len(levels) > self._max_depth:
-                raise ValueError(
-                    f"DAG 执行深度 {len(levels)} 超过最大限制 {self._max_depth}"
-                )
+                raise ValueError(f"DAG 执行深度 {len(levels)} 超过最大限制 {self._max_depth}")
 
             # 逐层执行
             for level_idx, level in enumerate(levels):
@@ -132,10 +130,7 @@ class DAGScheduler:
                     )
 
             # 检查是否有全部被跳过的情况
-            all_skipped = all(
-                r.status == TaskStatus.SKIPPED.value
-                for r in results.values()
-            )
+            all_skipped = all(r.status == TaskStatus.SKIPPED.value for r in results.values())
             if all_skipped:
                 return DAGResult(
                     dag_id=dag_id,
@@ -212,12 +207,11 @@ class DAGScheduler:
 
         # 并行执行
         coroutines = [
-            self._execute_task_with_retry(dag.nodes[nid], context)
-            for nid in tasks_to_execute
+            self._execute_task_with_retry(dag.nodes[nid], context) for nid in tasks_to_execute
         ]
         level_results = await asyncio.gather(*coroutines, return_exceptions=True)
 
-        for node_id, result in zip(tasks_to_execute, level_results):
+        for node_id, result in zip(tasks_to_execute, level_results, strict=False):
             if isinstance(result, Exception):
                 results[node_id] = TaskResult(
                     node_id=node_id,
@@ -300,7 +294,7 @@ class DAGScheduler:
                     completed_at=completed_at,
                 )
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 last_error = f"任务执行超时（{self._task_timeout}s）"
                 logger.warning(
                     "task_timeout",
@@ -333,7 +327,7 @@ class DAGScheduler:
 
             # 如果还有重试机会，等待指数退避时间
             if attempt < self._max_retry:
-                delay = base_delay * (2 ** attempt)
+                delay = base_delay * (2**attempt)
                 logger.debug(
                     "task_retry_waiting",
                     node_id=node_id,
@@ -420,7 +414,7 @@ class DAGScheduler:
 
         # 解析 context. 前缀
         if condition.startswith("context."):
-            key_path = condition[len("context."):]
+            key_path = condition[len("context.") :]
             parts = key_path.split(".")
             value = context
             for part in parts:
@@ -439,7 +433,7 @@ class DAGScheduler:
 
         # 解析 result.node_id. 前缀
         if condition.startswith("result."):
-            key_path = condition[len("result."):]
+            key_path = condition[len("result.") :]
             parts = key_path.split(".")
             if len(parts) < 2:
                 return False

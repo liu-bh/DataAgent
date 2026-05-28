@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from datapilot_tools.models import ToolCategory, ToolDefinition
 from datapilot_tools.description import ToolDescriptionBuilder
 
+if TYPE_CHECKING:
+    from datapilot_tools.models import ToolCategory, ToolDefinition
 
 # 工具执行器类型：接收参数字典，返回执行结果
 ToolExecutorFunc = Any

@@ -22,7 +22,6 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 from datapilot_common.database import Base  # noqa: E402
-from datapilot_semantic.models import ALL_MODELS  # noqa: E402
 
 # Alembic Config 对象
 config = context.config

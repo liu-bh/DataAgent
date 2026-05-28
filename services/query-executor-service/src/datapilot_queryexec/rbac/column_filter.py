@@ -6,9 +6,8 @@
 
 from __future__ import annotations
 
-import structlog
-
 import sqlglot
+import structlog
 from sqlglot.expressions import Alias, Column, Count, Expression, Star
 
 logger = structlog.get_logger(__name__)
@@ -18,9 +17,7 @@ class ColumnFilter:
     """通过 sqlglot AST 移除 SELECT 列实现列权限控制。"""
 
     @staticmethod
-    def apply(
-        sql: str, hidden_columns: list[str], dialect: str = "mysql"
-    ) -> tuple[str, list[str]]:
+    def apply(sql: str, hidden_columns: list[str], dialect: str = "mysql") -> tuple[str, list[str]]:
         """移除 SQL 中指定的列。
 
         Args:

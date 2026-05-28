@@ -6,11 +6,12 @@
 from __future__ import annotations
 
 import os
-
-from fastapi import Depends
-from sqlalchemy.ext.asyncio import AsyncSession
+from typing import TYPE_CHECKING
 
 from datapilot_common.database import async_session_maker, create_async_engine
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 
 def _get_engine():

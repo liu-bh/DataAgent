@@ -10,16 +10,12 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from dataclasses import dataclass
+from typing import Any
 
 import structlog
 
 from datapilot_agent.chart.prompts import CHART_RECOMMEND_PROMPT
-
-if TYPE_CHECKING:
-    from datapilot_chart.models import ChartSpec, ChartType
-    from datapilot_chart.type_infer import ChartTypeInferrer
 
 logger = structlog.get_logger(__name__)
 
@@ -178,7 +174,12 @@ class ChartRecommender:
             if self._is_time_column(col_name, col_type):
                 time_cols.append(col_name)
                 has_time = True
-            elif "int" in col_type or "float" in col_type or "number" in col_type or "decimal" in col_type:
+            elif (
+                "int" in col_type
+                or "float" in col_type
+                or "number" in col_type
+                or "decimal" in col_type
+            ):
                 numeric_cols.append(col_name)
             elif "bool" in col_type:
                 # 布尔列归为文本分类
@@ -273,7 +274,12 @@ class ChartRecommender:
 
             if self._is_time_column(col_name, col_type):
                 time_cols.append(col_name)
-            elif "int" in col_type or "float" in col_type or "number" in col_type or "decimal" in col_type:
+            elif (
+                "int" in col_type
+                or "float" in col_type
+                or "number" in col_type
+                or "decimal" in col_type
+            ):
                 numeric_cols.append(col_name)
             else:
                 text_cols.append(col_name)
@@ -436,11 +442,7 @@ class ChartRecommender:
             return True
 
         # 列名模式判断
-        for pattern in _TIME_PATTERNS:
-            if pattern.match(col_name):
-                return True
-
-        return False
+        return any(pattern.match(col_name) for pattern in _TIME_PATTERNS)
 
     @staticmethod
     def _chart_type_label(chart_type: str) -> str:
@@ -492,7 +494,9 @@ class ChartRecommender:
             return f"展示各 {x_field} 在 {fields_str} 中的占比分布，共 {row_count} 条记录。"
         elif chart_type == "scatter":
             if len(y_fields) >= 2:
-                return f"展示 {y_fields[0]} 与 {y_fields[1]} 之间的相关性分布，共 {row_count} 条记录。"
+                return (
+                    f"展示 {y_fields[0]} 与 {y_fields[1]} 之间的相关性分布，共 {row_count} 条记录。"
+                )
             return f"展示数据的分布情况，共 {row_count} 条记录。"
         elif chart_type == "table":
             return f"包含 {row_count} 条明细记录，展示 {x_field} 与 {fields_str} 的详细数据。"

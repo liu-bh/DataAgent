@@ -6,13 +6,16 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import structlog
 
-from .minio_cache import MinIOResultCache
-from .redis_cache import RedisResultCache
 from .strategy import CachePolicy, CacheStrategy, CacheTier
+
+if TYPE_CHECKING:
+    from .minio_cache import MinIOResultCache
+    from .redis_cache import RedisResultCache
 
 logger = structlog.get_logger(__name__)
 

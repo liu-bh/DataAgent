@@ -7,16 +7,13 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
-from typing import Optional
-from uuid import UUID
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from datapilot_common.exceptions import NotFoundError, ValidationError
-
 from datapilot_semantic.api.dependencies import get_db
 from datapilot_semantic.metadata.datasource_pool import (
     encrypt_password,
@@ -34,6 +31,11 @@ from datapilot_semantic.metadata.schemas import (
 )
 from datapilot_semantic.metadata.sync_worker import sync_metadata
 
+if TYPE_CHECKING:
+    from uuid import UUID
+
+    from sqlalchemy.ext.asyncio import AsyncSession
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/data-sources", tags=["数据源管理"])
@@ -44,7 +46,7 @@ router = APIRouter(prefix="/api/v1/data-sources", tags=["数据源管理"])
 
 
 async def _get_datasource_or_404(
-    db: AsyncSession, datasource_id: UUID, tenant_id: Optional[UUID] = None
+    db: AsyncSession, datasource_id: UUID, tenant_id: UUID | None = None
 ) -> DataSource:
     """获取数据源，不存在则抛出 404。"""
     stmt = select(DataSource).where(
@@ -103,8 +105,8 @@ async def create_datasource(
 @router.get("", response_model=list[DataSourceResponse])
 async def list_datasources(
     db: AsyncSession = Depends(get_db),
-    type: Optional[str] = Query(default=None, description="按类型过滤"),
-    status: Optional[str] = Query(default=None, description="按状态过滤"),
+    type: str | None = Query(default=None, description="按类型过滤"),
+    status: str | None = Query(default=None, description="按状态过滤"),
     page: int = Query(default=1, ge=1, description="页码"),
     page_size: int = Query(default=20, ge=1, le=100, description="每页数量"),
 ) -> list[DataSourceResponse]:
@@ -122,10 +124,7 @@ async def list_datasources(
     result = await db.execute(stmt)
     datasources = result.scalars().all()
 
-    return [
-        DataSourceResponse.model_validate(ds, from_attributes=True)
-        for ds in datasources
-    ]
+    return [DataSourceResponse.model_validate(ds, from_attributes=True) for ds in datasources]
 
 
 @router.get("/{datasource_id}", response_model=DataSourceResponse)
@@ -170,7 +169,7 @@ async def delete_datasource(
 ) -> None:
     """删除数据源（软删除）。"""
     datasource = await _get_datasource_or_404(db, datasource_id)
-    datasource.deleted_at = datetime.now(timezone.utc)
+    datasource.deleted_at = datetime.now(UTC)
     datasource.status = "disabled"
 
     await db.flush()
@@ -202,7 +201,7 @@ async def get_datasource_health(
     # 尝试连接测试（API 类型和密码未知情况下跳过）
     is_connected = test_connection(config) if datasource.type != "api" else True
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     health_status = "healthy" if is_connected else "down"
 
     # 创建健康记录
@@ -232,7 +231,7 @@ async def get_datasource_health(
 async def trigger_sync(
     datasource_id: UUID,
     db: AsyncSession = Depends(get_db),
-    schema_name: Optional[str] = Query(default=None, description="指定同步的 Schema 名"),
+    schema_name: str | None = Query(default=None, description="指定同步的 Schema 名"),
     force_full: bool = Query(default=False, description="是否强制全量同步"),
 ) -> SyncResultResponse:
     """触发元数据同步。
@@ -261,7 +260,7 @@ async def trigger_sync(
 async def list_synced_tables(
     datasource_id: UUID,
     db: AsyncSession = Depends(get_db),
-    schema_name: Optional[str] = Query(default=None, description="按 Schema 过滤"),
+    schema_name: str | None = Query(default=None, description="按 Schema 过滤"),
     page: int = Query(default=1, ge=1, description="页码"),
     page_size: int = Query(default=20, ge=1, le=100, description="每页数量"),
 ) -> list[SourceTableResponse]:
@@ -283,7 +282,4 @@ async def list_synced_tables(
     result = await db.execute(stmt)
     tables = result.scalars().all()
 
-    return [
-        SourceTableResponse.model_validate(t, from_attributes=True)
-        for t in tables
-    ]
+    return [SourceTableResponse.model_validate(t, from_attributes=True) for t in tables]

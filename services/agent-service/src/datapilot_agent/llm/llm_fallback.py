@@ -10,9 +10,12 @@ import asyncio
 import time
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any
 
 import structlog
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 logger = structlog.get_logger(__name__)
 
@@ -156,15 +159,20 @@ class LLMFallbackChain:
                             success=True,
                             content=content,
                             used_fallback=is_fallback,
-                            fallback_reason="" if not is_fallback else f"primary_failed",
+                            fallback_reason="" if not is_fallback else "primary_failed",
                             latency_ms=round(elapsed, 2),
                             errors=errors,
                         )
                     # Provider 返回了降级原因（如熔断）
                     reason_str = f"{provider_name}: {reason} (尝试 {attempt})"
                     errors.append(reason_str)
-                    logger.warning("Provider 返回降级原因", provider=provider_name, reason=reason, attempt=attempt)
-                except asyncio.TimeoutError:
+                    logger.warning(
+                        "Provider 返回降级原因",
+                        provider=provider_name,
+                        reason=reason,
+                        attempt=attempt,
+                    )
+                except TimeoutError:
                     reason_str = f"{provider_name}: 超时 ({max_timeout}s, 尝试 {attempt})"
                     errors.append(reason_str)
                     logger.warning(

@@ -9,7 +9,6 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 # 导入所有模型以便 autogenerate 能检测到
 from datapilot_session.database import Base  # noqa: E402
-from datapilot_session.models.session import Message, Session  # noqa: E402
 
 config = context.config
 if config.config_file_name is not None:

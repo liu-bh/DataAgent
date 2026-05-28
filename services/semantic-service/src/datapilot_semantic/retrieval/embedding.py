@@ -344,7 +344,7 @@ class EmbeddingClient:
         """
         if retry_count < self._config.max_retries:
             # 指数退避
-            delay = RETRY_BACKOFF_BASE * (2 ** retry_count)
+            delay = RETRY_BACKOFF_BASE * (2**retry_count)
             logger.info(
                 "embedding_api_retry",
                 retry_count=retry_count + 1,
@@ -421,9 +421,7 @@ class EmbeddingClient:
             return []
 
         # 预处理：截断文本
-        truncated = [
-            self._truncate_text(t, self._config.max_text_length) for t in texts
-        ]
+        truncated = [self._truncate_text(t, self._config.max_text_length) for t in texts]
 
         # 分批
         batches: list[list[str]] = []

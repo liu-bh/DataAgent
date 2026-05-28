@@ -8,15 +8,15 @@ from __future__ import annotations
 
 import math
 import random
-import time
 from dataclasses import dataclass
-from datetime import datetime
-from decimal import Decimal
-from typing import Any
-from uuid import UUID
+from typing import TYPE_CHECKING, Any
 
 import structlog
-from redis.asyncio import Redis
+
+if TYPE_CHECKING:
+    from uuid import UUID
+
+    from redis.asyncio import Redis
 
 logger = structlog.get_logger(__name__)
 

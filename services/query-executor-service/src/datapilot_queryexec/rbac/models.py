@@ -32,9 +32,7 @@ class PermissionRule(BaseModel):
     user_id: str
     tenant_id: str
     role: str = "viewer"  # viewer / analyst / admin
-    allowed_operations: list[OperationType] = Field(
-        default_factory=lambda: [OperationType.READ]
-    )
+    allowed_operations: list[OperationType] = Field(default_factory=lambda: [OperationType.READ])
     allowed_datasources: list[str] = Field(default_factory=list)  # 空 = 全部
     row_filter_expression: str = ""  # 行级权限 WHERE 表达式（如 "department_id = 100"）
     hidden_columns: list[str] = Field(default_factory=list)  # 列级权限，隐藏的列

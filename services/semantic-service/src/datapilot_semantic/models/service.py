@@ -8,18 +8,14 @@
 from __future__ import annotations
 
 import math
-from typing import Callable, Optional
+from datetime import UTC
+from typing import TYPE_CHECKING
 
 import structlog
 from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from datapilot_common.exceptions import NotFoundError
-
-from datapilot_semantic.models.dimension import Dimension
-from datapilot_semantic.models.metric import Metric
-from datapilot_semantic.models.semantic_model import SemanticModel
 from datapilot_semantic.models.schemas import (
     DimensionResponse,
     MetricResponse,
@@ -29,6 +25,12 @@ from datapilot_semantic.models.schemas import (
     SemanticModelResponse,
     SemanticModelUpdate,
 )
+from datapilot_semantic.models.semantic_model import SemanticModel
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = structlog.get_logger(__name__)
 
@@ -125,7 +127,7 @@ class SemanticModelService:
         self,
         db: AsyncSession,
         *,
-        domain: Optional[str] = None,
+        domain: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> PaginatedResponse[SemanticModelResponse]:
@@ -238,7 +240,7 @@ class SemanticModelService:
         Raises:
             NotFoundError: 语义模型不存在。
         """
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         stmt = select(SemanticModel).where(
             SemanticModel.id == model_id, SemanticModel.deleted_at.is_(None)
@@ -248,7 +250,7 @@ class SemanticModelService:
         if model is None:
             raise NotFoundError(resource="语义模型", resource_id=model_id)
 
-        model.deleted_at = datetime.now(timezone.utc)
+        model.deleted_at = datetime.now(UTC)
         db.add(model)
         await db.commit()
 

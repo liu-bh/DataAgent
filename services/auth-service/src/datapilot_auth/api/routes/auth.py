@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from datapilot_auth.config import settings
 from datapilot_auth.database import get_db
-from datapilot_auth.exceptions import AuthenticationError, NotFoundError
+from datapilot_auth.exceptions import AuthenticationError
 from datapilot_auth.models.user import User
 from datapilot_auth.schemas.auth import (
     LoginRequest,
@@ -106,7 +106,7 @@ async def refresh_token(
         raise AuthenticationError("Token 类型错误")
 
     user_id = uuid.UUID(payload["sub"])
-    tenant_id = uuid.UUID(payload["tenant_id"])
+    uuid.UUID(payload["tenant_id"])
 
     stmt = select(User).where(User.id == user_id)
     result = await db.execute(stmt)

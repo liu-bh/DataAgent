@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import structlog
 
@@ -96,7 +96,7 @@ class AsyncTaskManager:
                 logger.warning("更新状态时任务不存在", task_id=task_id)
                 return
 
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             task.status = status
 
             if status == TaskStatus.RUNNING and task.started_at is None:
@@ -140,7 +140,7 @@ class AsyncTaskManager:
 
             if task.status in (TaskStatus.PENDING, TaskStatus.RUNNING):
                 task.status = TaskStatus.CANCELLED
-                task.completed_at = datetime.now(timezone.utc)
+                task.completed_at = datetime.now(UTC)
                 if task.started_at is not None:
                     task.execution_time_ms = (
                         task.completed_at - task.started_at
@@ -160,7 +160,7 @@ class AsyncTaskManager:
         Returns:
             清理的任务数量。
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         removed_count = 0
 
         async with self._lock:

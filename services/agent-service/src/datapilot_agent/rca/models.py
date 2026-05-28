@@ -1,4 +1,5 @@
 """RCA 根因分析数据模型。"""
+
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
@@ -117,10 +118,7 @@ class RCAReport:
     def from_dict(cls, data: dict[str, Any]) -> RCAReport:
         """从字典反序列化。"""
         anomaly_data = data.get("anomaly", {})
-        if isinstance(anomaly_data, dict):
-            anomaly = AnomalyResult(**anomaly_data)
-        else:
-            anomaly = anomaly_data
+        anomaly = AnomalyResult(**anomaly_data) if isinstance(anomaly_data, dict) else anomaly_data
 
         drill_downs = []
         for dd in data.get("drill_downs", []):

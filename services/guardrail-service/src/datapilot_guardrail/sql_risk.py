@@ -143,7 +143,9 @@ class SQLRiskDetector:
             table_name = table_node.name.lower() if table_node.name else ""
             # 带有 db/schema 限定的情况
             db_name = table_node.db if table_node.db else ""
-            catalog = table_node.catalog if hasattr(table_node, "catalog") and table_node.catalog else ""
+            catalog = (
+                table_node.catalog if hasattr(table_node, "catalog") and table_node.catalog else ""
+            )
 
             full_name_parts = [p for p in [catalog, db_name, table_name] if p]
             full_name = ".".join(full_name_parts)

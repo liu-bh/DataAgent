@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING
 import structlog
 
 if TYPE_CHECKING:
-    from datapilot_dag import DAGraph, DAGNode
+    from datapilot_dag import DAGraph
 
 logger = structlog.get_logger(__name__)
 
@@ -31,11 +31,11 @@ class NL2SQLDAGBuilder:
 
     使用方式::
 
-        from datapilot_dag import DAGExecutor
+        from datapilot_dag import DAGScheduler
 
         builder = NL2SQLDAGBuilder()
         dag = builder.build(question="上个月销售额是多少？", dialect="mysql")
-        result = await DAGExecutor().run(dag)
+        result = await DAGScheduler().run(dag)
     """
 
     # 节点类型常量

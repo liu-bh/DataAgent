@@ -2,7 +2,7 @@
 
 import uuid
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from sqlalchemy import String, func
 from sqlalchemy.dialects.postgresql import UUID
@@ -11,7 +11,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from datapilot_auth.database import Base  # type: ignore[attr-defined]
 
 
-class UserRole(str, Enum):
+class UserRole(StrEnum):
     """用户角色枚举。"""
 
     ADMIN = "admin"

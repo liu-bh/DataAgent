@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import time
-from typing import Any
+from typing import TYPE_CHECKING
 
-from .models import MemoryEntry, MemoryType
+if TYPE_CHECKING:
+    from .models import MemoryEntry, MemoryType
 
 
 class MemoryStore:
@@ -29,36 +30,24 @@ class MemoryStore:
         is_update = entry.entry_id in self._entries
         if not is_update:
             # 新增：维护索引
-            self._session_index.setdefault(entry.session_id, []).append(
-                entry.entry_id
-            )
-            self._type_index.setdefault(entry.memory_type.value, []).append(
-                entry.entry_id
-            )
+            self._session_index.setdefault(entry.session_id, []).append(entry.entry_id)
+            self._type_index.setdefault(entry.memory_type.value, []).append(entry.entry_id)
         else:
             # 更新：如果 session 或类型变了，需要重建索引
             old = self._entries[entry.entry_id]
             if old.session_id != entry.session_id:
                 if old.session_id in self._session_index:
                     self._session_index[old.session_id] = [
-                        eid
-                        for eid in self._session_index[old.session_id]
-                        if eid != entry.entry_id
+                        eid for eid in self._session_index[old.session_id] if eid != entry.entry_id
                     ]
-                self._session_index.setdefault(entry.session_id, []).append(
-                    entry.entry_id
-                )
+                self._session_index.setdefault(entry.session_id, []).append(entry.entry_id)
             if old.memory_type != entry.memory_type:
                 old_type_key = old.memory_type.value
                 if old_type_key in self._type_index:
                     self._type_index[old_type_key] = [
-                        eid
-                        for eid in self._type_index[old_type_key]
-                        if eid != entry.entry_id
+                        eid for eid in self._type_index[old_type_key] if eid != entry.entry_id
                     ]
-                self._type_index.setdefault(entry.memory_type.value, []).append(
-                    entry.entry_id
-                )
+                self._type_index.setdefault(entry.memory_type.value, []).append(entry.entry_id)
 
         self._entries[entry.entry_id] = entry
         return entry.entry_id
@@ -114,9 +103,7 @@ class MemoryStore:
         # 清理 session 索引
         if entry.session_id in self._session_index:
             self._session_index[entry.session_id] = [
-                eid
-                for eid in self._session_index[entry.session_id]
-                if eid != entry_id
+                eid for eid in self._session_index[entry.session_id] if eid != entry_id
             ]
             if not self._session_index[entry.session_id]:
                 del self._session_index[entry.session_id]
@@ -146,7 +133,7 @@ class MemoryStore:
                 continue
             try:
                 # 尝试解析 ISO 格式时间戳
-                from datetime import datetime, timezone
+                from datetime import datetime
 
                 expires_dt = datetime.fromisoformat(entry.expires_at)
                 expires_ts = expires_dt.timestamp()
@@ -178,9 +165,7 @@ class MemoryStore:
                     type_key = entry.memory_type.value
                     if type_key in self._type_index:
                         self._type_index[type_key] = [
-                            tid
-                            for tid in self._type_index[type_key]
-                            if tid != eid
+                            tid for tid in self._type_index[type_key] if tid != eid
                         ]
                         if not self._type_index[type_key]:
                             del self._type_index[type_key]

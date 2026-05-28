@@ -5,7 +5,10 @@
 
 from __future__ import annotations
 
-from .models import ConversationContext, ConversationTurn, MemoryEntry
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .models import ConversationTurn, MemoryEntry
 
 
 class ContextWindowManager:
@@ -60,7 +63,7 @@ class ContextWindowManager:
         # 2. 按优先级分割对话轮次
         # 最新 2 轮（即最新 2 条 user + 最新 2 条 assistant）
         recent_turns: list[ConversationTurn] = turns[-4:] if len(turns) > 4 else list(turns)
-        older_turns: list[ConversationTurn] = turns[: -4] if len(turns) > 4 else []
+        older_turns: list[ConversationTurn] = turns[:-4] if len(turns) > 4 else []
 
         # 3. 添加最新对话（高优先级）
         remaining = self._max_tokens - used_tokens

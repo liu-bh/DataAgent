@@ -120,9 +120,7 @@ class SQLValidator:
                 if col_table in valid_tables and col_name != "*":
                     table_columns = self._schema.get(col_table, {})
                     if col_name not in table_columns:
-                        result.add_error(
-                            f"列 '{col_table}.{col_name}' 不存在于表 '{col_table}' 中"
-                        )
+                        result.add_error(f"列 '{col_table}.{col_name}' 不存在于表 '{col_table}' 中")
             # 没有表限定的列：检查所有引用的表
             elif valid_tables:
                 found = False
@@ -134,9 +132,7 @@ class SQLValidator:
                         found = True
                         break
                 if not found and col_name != "*":
-                    result.add_warning(
-                        f"列 '{col_name}' 未在引用的表 {valid_tables} 中找到"
-                    )
+                    result.add_warning(f"列 '{col_name}' 未在引用的表 {valid_tables} 中找到")
 
         # 4. 方言兼容性检查
         if target_dialect is not None:
@@ -197,9 +193,7 @@ class SQLValidator:
                 col_table = node.table
 
                 # 避免重复
-                if not any(
-                    c["name"] == col_name and c["table"] == col_table for c in columns
-                ):
+                if not any(c["name"] == col_name and c["table"] == col_table for c in columns):
                     columns.append({"name": col_name, "table": col_table})
 
         return columns

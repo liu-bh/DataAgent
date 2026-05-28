@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from .models import ConversationTurn
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .models import ConversationTurn
 
 
 class ConversationSummarizer:

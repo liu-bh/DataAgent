@@ -7,10 +7,12 @@ from __future__ import annotations
 
 import hashlib
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from datapilot_cache.cache import CacheManager
 from datapilot_cache.models import CacheKey
+
+if TYPE_CHECKING:
+    from datapilot_cache.cache import CacheManager
 
 logger = logging.getLogger(__name__)
 

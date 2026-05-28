@@ -3,6 +3,7 @@
 编排 LLM 和工具调用的循环，实现完整的 Function Calling 流程：
 构建消息 -> 调用 LLM -> 判断是否需要工具调用 -> 执行工具 -> 回传结果 -> 继续循环。
 """
+
 from __future__ import annotations
 
 import json
@@ -113,11 +114,13 @@ class FunctionCallingExecutor:
             )
 
             # 将 LLM 的 assistant 消息（含 tool_calls）追加到 messages
-            messages.append({
-                "role": "assistant",
-                "content": response.get("content") or "",
-                "tool_calls": llm_tool_calls,
-            })
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": response.get("content") or "",
+                    "tool_calls": llm_tool_calls,
+                }
+            )
 
             try:
                 tool_results = await self._execute_tool_calls(llm_tool_calls, request)
@@ -144,11 +147,13 @@ class FunctionCallingExecutor:
 
             # 将工具结果追加到 messages
             for tc_data, result in zip(llm_tool_calls, tool_results, strict=True):
-                messages.append({
-                    "role": "tool",
-                    "tool_call_id": tc_data["id"],
-                    "content": json.dumps(result, ensure_ascii=False),
-                })
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tc_data["id"],
+                        "content": json.dumps(result, ensure_ascii=False),
+                    }
+                )
 
         total_time_ms = (time.perf_counter() - start_time) * 1000
 
@@ -306,12 +311,14 @@ class FunctionCallingExecutor:
                     tool_args,
                     context=request.context,
                 )
-                results.append({
-                    "success": True,
-                    "data": result,
-                    "tool_name": tool_name,
-                    "tool_call_id": tool_call_id,
-                })
+                results.append(
+                    {
+                        "success": True,
+                        "data": result,
+                        "tool_name": tool_name,
+                        "tool_call_id": tool_call_id,
+                    }
+                )
             except Exception as exc:
                 logger.warning(
                     "tool_execution_failed",
@@ -319,11 +326,13 @@ class FunctionCallingExecutor:
                     tool_call_id=tool_call_id,
                     error=str(exc),
                 )
-                results.append({
-                    "success": False,
-                    "error": str(exc),
-                    "tool_name": tool_name,
-                    "tool_call_id": tool_call_id,
-                })
+                results.append(
+                    {
+                        "success": False,
+                        "error": str(exc),
+                        "tool_name": tool_name,
+                        "tool_call_id": tool_call_id,
+                    }
+                )
 
         return results

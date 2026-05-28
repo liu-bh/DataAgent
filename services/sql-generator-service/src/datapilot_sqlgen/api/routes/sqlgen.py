@@ -6,13 +6,14 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import structlog
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, ConfigDict, Field
 
-from ...generator.models import NL2SQLResult
+if TYPE_CHECKING:
+    from ...generator.models import NL2SQLResult
 
 logger = structlog.get_logger(__name__)
 

@@ -8,13 +8,15 @@ from __future__ import annotations
 
 import hashlib
 import logging
-from typing import Optional
+from typing import TYPE_CHECKING
 from urllib.parse import quote_plus
 
 from sqlalchemy import create_engine, text
-from sqlalchemy.engine import Engine
 
-from datapilot_semantic.metadata.schemas import DataConnectionConfig
+if TYPE_CHECKING:
+    from sqlalchemy.engine import Engine
+
+    from datapilot_semantic.metadata.schemas import DataConnectionConfig
 
 logger = logging.getLogger(__name__)
 
@@ -260,7 +262,7 @@ def test_connection(config: DataConnectionConfig) -> bool:
 # ---------------------------------------------------------------------------
 
 # 模块级单例，供 API 层使用
-_pool_manager: Optional[DataSourcePool] = None
+_pool_manager: DataSourcePool | None = None
 
 
 def get_pool_manager() -> DataSourcePool:

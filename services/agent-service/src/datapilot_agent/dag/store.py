@@ -7,7 +7,7 @@ Phase1 使用内存存储，生产环境可替换为 Redis/PostgreSQL 实现。
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 import structlog

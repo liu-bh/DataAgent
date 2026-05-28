@@ -271,16 +271,12 @@ class IntentParser:
 
         # 今天
         if "今天" in question or "今日" in question:
-            return TimeRange(
-                start=today, end=today, raw_text="今天", granularity="day"
-            )
+            return TimeRange(start=today, end=today, raw_text="今天", granularity="day")
 
         # 昨天
         if "昨天" in question or "昨日" in question:
             yesterday = today.replace(day=today.day - 1) if today.day > 1 else today
-            return TimeRange(
-                start=yesterday, end=yesterday, raw_text="昨天", granularity="day"
-            )
+            return TimeRange(start=yesterday, end=yesterday, raw_text="昨天", granularity="day")
 
         # 本月
         if "本月" in question or "这个月" in question:
@@ -299,9 +295,7 @@ class IntentParser:
             else:
                 start = date(today.year, today.month - 1, 1)
                 end = date(today.year, today.month, 1)  # 不含当月
-            return TimeRange(
-                start=start, end=end, raw_text="上月", granularity="month"
-            )
+            return TimeRange(start=start, end=end, raw_text="上月", granularity="month")
 
         # 季度解析（需在"今年"/"去年"检查之前）
         q_match = re.search(r"(今年|本年|去年)?[Qq]([1-4])", question)
@@ -315,9 +309,7 @@ class IntentParser:
             # 计算季度末最后一天
             end = date(year, 12, 31) if q_end_month == 12 else date(year, q_end_month + 1, 1)
             raw = f"{year}Q{q_num}"
-            return TimeRange(
-                start=start, end=end, raw_text=raw, granularity="quarter"
-            )
+            return TimeRange(start=start, end=end, raw_text=raw, granularity="quarter")
 
         # 今年
         if "今年" in question or "本年" in question:
@@ -341,12 +333,12 @@ class IntentParser:
         match = re.search(r"最近(\d+)天", question)
         if match:
             days = int(match.group(1))
-            start = today.replace(day=today.day - days) if today.day > days else date(
-                today.year, today.month - 1, today.day
+            start = (
+                today.replace(day=today.day - days)
+                if today.day > days
+                else date(today.year, today.month - 1, today.day)
             )
-            return TimeRange(
-                start=start, end=today, raw_text=f"最近{days}天", granularity="day"
-            )
+            return TimeRange(start=start, end=today, raw_text=f"最近{days}天", granularity="day")
 
         return TimeRange()
 
@@ -435,9 +427,25 @@ class IntentParser:
         """从问题中提取可能的指标关键词。"""
         metrics: list[str] = []
         known_metrics = [
-            "销售额", "GMV", "gmv", "订单量", "客单价", "转化率", "利润",
-            "营收", "收入", "成本", "毛利", "净利", "退货率", "复购率",
-            "活跃用户", "新增用户", "留存率", "DAU", "MAU",
+            "销售额",
+            "GMV",
+            "gmv",
+            "订单量",
+            "客单价",
+            "转化率",
+            "利润",
+            "营收",
+            "收入",
+            "成本",
+            "毛利",
+            "净利",
+            "退货率",
+            "复购率",
+            "活跃用户",
+            "新增用户",
+            "留存率",
+            "DAU",
+            "MAU",
         ]
         for m in known_metrics:
             if m.lower() in question.lower() and m not in metrics:
@@ -448,15 +456,33 @@ class IntentParser:
         """从问题中提取可能的维度关键词。"""
         dimensions: list[str] = []
         known_dims = [
-            "地区", "区域", "省份", "城市", "时间", "日期", "月份", "季度", "年份",
-            "商品", "类目", "品类", "品牌", "渠道", "用户", "性别", "年龄",
+            "地区",
+            "区域",
+            "省份",
+            "城市",
+            "时间",
+            "日期",
+            "月份",
+            "季度",
+            "年份",
+            "商品",
+            "类目",
+            "品类",
+            "品牌",
+            "渠道",
+            "用户",
+            "性别",
+            "年龄",
         ]
         for d in known_dims:
             if d in question and d not in dimensions:
                 dimensions.append(d)
 
         # 额外提取 "X区" 模式为地区维度（如"华东区"、"华南区"）
-        region_match = re.search(r"((?:华[东南北]|西[南北]|中[南西北]|[自海]?内[蒙古]?|[云贵川陕甘青]肃?)\s*区)", question)
+        region_match = re.search(
+            r"((?:华[东南北]|西[南北]|中[南西北]|[自海]?内[蒙古]?|[云贵川陕甘青]肃?)\s*区)",
+            question,
+        )
         if region_match and "地区" not in dimensions:
             dimensions.append("地区")
 
@@ -464,9 +490,7 @@ class IntentParser:
 
     # ---- LLM 结果构建 ----
 
-    def _build_parsed_intent(
-        self, raw: dict[str, Any], question: str
-    ) -> ParsedIntent:
+    def _build_parsed_intent(self, raw: dict[str, Any], question: str) -> ParsedIntent:
         """从 LLM JSON 响应构建 ParsedIntent。
 
         Args:
