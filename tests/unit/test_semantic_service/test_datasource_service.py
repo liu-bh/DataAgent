@@ -60,10 +60,27 @@ def mock_db() -> AsyncMock:
     """创建 mock 数据库会话。"""
     db = AsyncMock()
     db.flush = AsyncMock()
-    db.refresh = AsyncMock()
+    # refresh 模拟数据库刷新：填充 ORM 对象的 Base/TenantBase 默认字段
+    db.refresh = AsyncMock(
+        side_effect=lambda obj: _fill_orm_defaults(obj)
+    )
     db.add = MagicMock()
     db.execute = AsyncMock()
     return db
+
+
+def _fill_orm_defaults(obj: object) -> None:
+    """为 ORM 对象填充 Base/TenantBase 的默认字段值，模拟 db.refresh 行为。"""
+    from uuid import uuid4
+    now = datetime.now(timezone.utc)
+    if not getattr(obj, "id", None):
+        setattr(obj, "id", uuid4())
+    if not getattr(obj, "tenant_id", None):
+        setattr(obj, "tenant_id", uuid4())
+    if not getattr(obj, "created_at", None):
+        setattr(obj, "created_at", now)
+    if not getattr(obj, "updated_at", None):
+        setattr(obj, "updated_at", now)
 
 
 @pytest.fixture
@@ -151,10 +168,12 @@ class TestCreateDataSource:
         mock_datasource: MagicMock,
     ) -> None:
         """成功创建数据源。"""
-        # 模拟 flush 后 refresh 返回带有 ID 的对象
-        mock_db.refresh.side_effect = lambda obj: setattr(
-            obj, "id", mock_datasource.id
-        )
+        # 模拟 flush 后 refresh 返回带有 ID 的对象，同时填充其他默认字段
+        def _refresh_with_id(obj: object) -> None:
+            _fill_orm_defaults(obj)
+            setattr(obj, "id", mock_datasource.id)
+
+        mock_db.refresh.side_effect = _refresh_with_id
 
         result = await service.create_datasource(create_data, mock_db)
 
@@ -182,7 +201,7 @@ class TestCreateDataSource:
             username="root",
             password="pwd",
         )
-        mock_db.refresh = AsyncMock()
+        # 保留 fixture 中 refresh 的 side_effect，用于填充默认字段
 
         await service.create_datasource(data, mock_db)
         mock_db.add.assert_called_once()

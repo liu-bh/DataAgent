@@ -79,8 +79,8 @@ class TestLLMCallStats:
 class TestLLMCallLogger:
     """LLMCallLogger 单元测试。"""
 
-    def _make_logger(self) -> LLMCallLogger:
-        return LLMCallLogger()
+    def _make_logger(self, max_records: int = 10000) -> LLMCallLogger:
+        return LLMCallLogger(max_records=max_records)
 
     @pytest.mark.asyncio
     async def test_log_single_record(self) -> None:
@@ -95,6 +95,7 @@ class TestLLMCallLogger:
             cost=0.00003,
             success=True,
         )
+        await asyncio.sleep(0)  # 让后台消费者处理队列
         assert logger.record_count == 1
 
     @pytest.mark.asyncio
@@ -111,6 +112,7 @@ class TestLLMCallLogger:
                 cost=0.00003,
                 success=True,
             )
+        await asyncio.sleep(0)  # 让后台消费者处理队列
         assert logger.record_count == 5
 
     @pytest.mark.asyncio
@@ -120,6 +122,7 @@ class TestLLMCallLogger:
         await logger.log("qwen-turbo", "intent", 100, 50, 200, 0.00003, True)
         await logger.log("qwen-turbo", "intent", 100, 50, 300, 0.00003, True)
         await logger.log("deepseek-v3", "nl2sql", 500, 200, 1000, 0.0009, False)
+        await asyncio.sleep(0)  # 让后台消费者处理队列
 
         stats = logger.get_stats()
         assert stats.total_calls == 3
@@ -136,6 +139,7 @@ class TestLLMCallLogger:
         await logger.log("qwen-turbo", "intent", 100, 50, 200, 0.00003, True)
         await logger.log("deepseek-v3", "nl2sql", 500, 200, 1000, 0.0009, True)
         await logger.log("qwen-plus", "explanation", 200, 100, 500, 0.00036, True)
+        await asyncio.sleep(0)  # 让后台消费者处理队列
 
         stats = logger.get_stats(scene="intent")
         assert stats.total_calls == 1
@@ -148,6 +152,7 @@ class TestLLMCallLogger:
         await logger.log("qwen-turbo", "intent", 100, 50, 200, 0.00003, True)
         await logger.log("qwen-turbo", "chitchat", 80, 30, 150, 0.000027, True)
         await logger.log("deepseek-v3", "nl2sql", 500, 200, 1000, 0.0009, True)
+        await asyncio.sleep(0)  # 让后台消费者处理队列
 
         stats = logger.get_stats(model="qwen-turbo")
         assert stats.total_calls == 2
@@ -185,6 +190,7 @@ class TestLLMCallLogger:
         await logger.log("qwen-turbo", "intent", 100, 50, 200, 0.00003, True)
         await logger.log("qwen-turbo", "chitchat", 80, 30, 150, 0.000027, True)
         await logger.log("deepseek-v3", "nl2sql", 500, 200, 1000, 0.0009, True)
+        await asyncio.sleep(0)  # 让后台消费者处理队列
 
         stats_by_model = logger.get_stats_by_model()
         assert "qwen-turbo" in stats_by_model
@@ -206,6 +212,7 @@ class TestLLMCallLogger:
         logger = self._make_logger()
         await logger.log("qwen-turbo", "intent", 0, 0, 200, 0, True)
         await logger.log("qwen-turbo", "intent", 0, 0, 400, 0, True)
+        await asyncio.sleep(0)  # 让后台消费者处理队列
 
         stats = logger.get_stats()
         assert stats.avg_latency_ms == 300.0
@@ -224,6 +231,7 @@ class TestLLMCallLogger:
                 cost=0.00003,
                 success=True,
             )
+            await asyncio.sleep(0)  # 让后台消费者处理队列
         # 超过 max_records 后会淘汰旧记录
         assert logger.record_count <= 10
 

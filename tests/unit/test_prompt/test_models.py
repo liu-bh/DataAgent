@@ -64,24 +64,18 @@ class TestPromptVersionModel:
         assert prompt.effectiveness_score is None
 
     def test_ab_test_traffic_default(self) -> None:
-        """测试 ab_test_traffic 默认值。"""
-        prompt = PromptVersion(
-            id=str(uuid4()),
-            scene="intent",
-            version=1,
-            content="意图识别 Prompt",
-        )
-        assert prompt.ab_test_traffic == 0.0
+        """测试 ab_test_traffic 列默认值定义。"""
+        # SQLAlchemy mapped_column 的 default 仅在 INSERT 生效，
+        # 通过检查列定义验证默认值是否正确设置
+        col = PromptVersion.__table__.c["ab_test_traffic"]
+        assert col.default.arg == 0.0  # type: ignore[union-attr]
 
     def test_is_active_default(self) -> None:
-        """测试 is_active 默认值。"""
-        prompt = PromptVersion(
-            id=str(uuid4()),
-            scene="explanation",
-            version=1,
-            content="解释 Prompt",
-        )
-        assert prompt.is_active is False
+        """测试 is_active 列默认值定义。"""
+        # SQLAlchemy mapped_column 的 default 仅在 INSERT 生效，
+        # 通过检查列定义验证默认值是否正确设置
+        col = PromptVersion.__table__.c["is_active"]
+        assert col.default.arg is False  # type: ignore[union-attr]
 
     def test_all_scenes_valid(self) -> None:
         """验证所有场景值都能创建实例。"""

@@ -42,6 +42,9 @@ class DAGScheduler:
         from datapilot_dag.executor.registry import ExecutorRegistry
 
         self._registry = registry or ExecutorRegistry()
+        # 未传入自定义注册表时，注册默认执行器
+        if registry is None:
+            self._registry.register_defaults()
         self._max_depth = max_depth
         self._max_retry = max_retry
         self._task_timeout = task_timeout
@@ -426,7 +429,9 @@ class DAGScheduler:
                     if " == " in part:
                         part_key, expected = part.split(" == ", 1)
                         actual = value.get(part_key)
-                        return str(actual) == expected.strip("'\"")
+                        # 统一将实际值和期望值转为小写字符串比较，
+                        # 兼容布尔值 True/False 与字符串 "true"/"false"
+                        return str(actual).lower() == expected.strip("'\"").lower()
                     value = value.get(part)
                 else:
                     return False

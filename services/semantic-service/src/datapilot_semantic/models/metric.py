@@ -42,7 +42,7 @@ class Metric(TenantBase, Base):
     parent_metric: Mapped[Optional["Metric"]] = relationship(  # noqa: F821
         "Metric",
         remote_side="Metric.id",
-        foreign_keys=[lambda: Metric.parent_metric_id],
+        foreign_keys="Metric.parent_metric_id",
         lazy="noload",
     )
     metric_dimensions: Mapped[list["MetricDimension"]] = relationship(  # noqa: F821

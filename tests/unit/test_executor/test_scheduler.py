@@ -54,6 +54,7 @@ class TestDAGScheduler:
         executors: dict[str, BaseTaskExecutor] | None = None,
         max_retry: int = 3,
         task_timeout: float = 30.0,
+        max_depth: int = 5,
     ) -> DAGScheduler:
         """创建测试用调度器。"""
         registry = ExecutorRegistry()
@@ -64,6 +65,7 @@ class TestDAGScheduler:
             registry=registry,
             max_retry=max_retry,
             task_timeout=task_timeout,
+            max_depth=max_depth,
         )
 
     @pytest.mark.asyncio

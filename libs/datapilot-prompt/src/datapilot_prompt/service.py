@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+import uuid
+from datetime import datetime, timezone
 from uuid import UUID
 
 import structlog
@@ -100,11 +102,14 @@ class PromptManager:
         is_first_version = count_result.scalar_one() == 0
 
         prompt = PromptVersion(
+            id=str(uuid.uuid4()),
             scene=scene,
             version=next_version,
             content=content,
             is_active=is_first_version,
             ab_test_traffic=ab_test_traffic,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
         )
         self._session.add(prompt)
         await self._session.flush()

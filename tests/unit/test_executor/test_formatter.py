@@ -65,7 +65,8 @@ class TestResultFormatter:
     def test_to_csv_empty(self) -> None:
         """测试空数据集的 CSV 格式化。"""
         result = ResultFormatter.to_csv([], [])
-        assert result == "\ufeff"
+        # csv.writer 写入空列标题后会添加换行符，因此实际结果为 BOM + 换行
+        assert result == "\ufeff\r\n" or result == "\ufeff\n"
 
     def test_to_csv_with_comma_in_value(self) -> None:
         """测试 CSV 值中包含逗号时正确转义。"""

@@ -38,13 +38,13 @@ class TableRelationship(TenantBase, Base):
     left_table: Mapped["SourceTable"] = relationship(  # noqa: F821
         "SourceTable",
         back_populates="left_relationships",
-        foreign_keys=[lambda: TableRelationship.left_table_id],
+        foreign_keys="TableRelationship.left_table_id",
         lazy="noload",
     )
     right_table: Mapped["SourceTable"] = relationship(  # noqa: F821
         "SourceTable",
         back_populates="right_relationships",
-        foreign_keys=[lambda: TableRelationship.right_table_id],
+        foreign_keys="TableRelationship.right_table_id",
         lazy="noload",
     )
 

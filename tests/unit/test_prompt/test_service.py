@@ -176,12 +176,16 @@ class TestPromptManagerActivate:
         find_result = MagicMock()
         find_result.scalar_one_or_none.return_value = target_prompt
 
-        # 第二次查询：找到当前激活版本
+        # 第二次查询：找到当前激活版本（用于取消激活）
         active_result = MagicMock()
         active_result.scalars.return_value.all.return_value = [active_prompt]
 
+        # 第三次查询：再次查询所有激活版本
+        deactivate_result = MagicMock()
+        deactivate_result.scalars.return_value.all.return_value = [active_prompt]
+
         mock_session.execute = AsyncMock(
-            side_effect=[find_result, active_result]
+            side_effect=[find_result, active_result, deactivate_result]
         )
         mock_session.flush = AsyncMock()
 

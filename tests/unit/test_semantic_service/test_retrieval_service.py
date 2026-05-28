@@ -37,7 +37,7 @@ from datapilot_semantic.retrieval.service import RetrievalService
 @pytest.fixture
 def mock_searcher() -> AsyncMock:
     """创建 mock HybridSearcher。"""
-    searcher = AsyncMock(spec=RetrievalService.__init__.__annotations__["searcher"])
+    searcher = AsyncMock()
     return searcher
 
 
@@ -135,10 +135,10 @@ class TestSearch:
         self,
         mock_searcher: AsyncMock,
         mock_cache: AsyncMock,
-        sample_dict_results: list[dict],
+        sample_cached_results: list[CachedSearchResult],
     ) -> None:
         """缓存命中时直接返回缓存结果，不调用搜索器。"""
-        mock_cache.get_cached_results.return_value = sample_dict_results
+        mock_cache.get_cached_results.return_value = sample_cached_results
 
         service = RetrievalService(searcher=mock_searcher, cache=mock_cache)
         results = await service.search("销售额", "tenant-001")

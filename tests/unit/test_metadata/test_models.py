@@ -65,7 +65,9 @@ class TestDataSourceModel:
         assert ds.host == "localhost"
         assert ds.port == 3306
         assert ds.database == "testdb"
-        assert ds.status == "active"  # server_default 应为 active
+        # server_default 仅在 INSERT 时生效，构造时值为 None
+        status_col = DataSource.__table__.c["status"]
+        assert status_col.server_default.arg == "active"  # type: ignore[union-attr]
 
     def test_soft_delete_field(self) -> None:
         """测试软删除字段默认为 None。"""

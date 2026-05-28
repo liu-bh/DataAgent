@@ -126,5 +126,6 @@ class SQLTaskExecutor(BaseTaskExecutor):
             "columns": ["result"],
             "rows": [{"result": f"mock result for datasource={datasource_id}"}],
             "sql": sql,
+            "datasource_id": datasource_id,
             "mock": True,
         }

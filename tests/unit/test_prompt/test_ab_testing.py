@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 from uuid import uuid4, UUID
 
 from datapilot_prompt.ab_testing import ABTestingManager, PromptStatistics
@@ -112,21 +112,25 @@ class TestABTestingRecordOutcome:
     @pytest.mark.asyncio
     async def test_record_success(self, ab_manager: ABTestingManager, mock_redis: AsyncMock) -> None:
         """记录成功结果。"""
-        mock_pipe = AsyncMock()
-        mock_redis.pipeline.return_value = mock_pipe
+        mock_pipe = MagicMock()
+        mock_pipe.execute = AsyncMock()
+        # pipeline() 在 redis.asyncio 中是同步方法，返回 Pipeline 对象
+        mock_redis.pipeline = MagicMock(return_value=mock_pipe)
 
         prompt_id = uuid4()
         await ab_manager.record_outcome(prompt_id, success=True, latency_ms=150.0)
 
         mock_redis.pipeline.assert_called_once()
-        assert mock_pipe.incr.call_count == 1  # total_requests
+        # total_requests + success_count 共 2 次 incr
+        assert mock_pipe.incr.call_count == 2
         assert mock_pipe.incrbyfloat.call_count == 1  # total_latency_ms
 
     @pytest.mark.asyncio
     async def test_record_failure(self, ab_manager: ABTestingManager, mock_redis: AsyncMock) -> None:
         """记录失败结果。"""
-        mock_pipe = AsyncMock()
-        mock_redis.pipeline.return_value = mock_pipe
+        mock_pipe = MagicMock()
+        mock_pipe.execute = AsyncMock()
+        mock_redis.pipeline = MagicMock(return_value=mock_pipe)
 
         prompt_id = uuid4()
         await ab_manager.record_outcome(prompt_id, success=False, latency_ms=200.0)
@@ -136,8 +140,9 @@ class TestABTestingRecordOutcome:
     @pytest.mark.asyncio
     async def test_record_user_feedback_edited(self, ab_manager: ABTestingManager, mock_redis: AsyncMock) -> None:
         """记录用户编辑反馈。"""
-        mock_pipe = AsyncMock()
-        mock_redis.pipeline.return_value = mock_pipe
+        mock_pipe = MagicMock()
+        mock_pipe.execute = AsyncMock()
+        mock_redis.pipeline = MagicMock(return_value=mock_pipe)
 
         prompt_id = uuid4()
         await ab_manager.record_user_feedback(prompt_id, edited=True)
@@ -148,8 +153,9 @@ class TestABTestingRecordOutcome:
     @pytest.mark.asyncio
     async def test_record_user_feedback_satisfied(self, ab_manager: ABTestingManager, mock_redis: AsyncMock) -> None:
         """记录用户满意反馈。"""
-        mock_pipe = AsyncMock()
-        mock_redis.pipeline.return_value = mock_pipe
+        mock_pipe = MagicMock()
+        mock_pipe.execute = AsyncMock()
+        mock_redis.pipeline = MagicMock(return_value=mock_pipe)
 
         prompt_id = uuid4()
         await ab_manager.record_user_feedback(prompt_id, satisfied=True)

@@ -10,7 +10,7 @@ from datetime import datetime
 from typing import Any, Generic, Optional, TypeVar
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 # ---------------------------------------------------------------------------
@@ -195,13 +195,12 @@ class DimensionCreate(BaseModel):
     is_virtual: bool = Field(default=False, description="是否虚拟维度")
     virtual_expression: Optional[str] = Field(None, description="虚拟维度表达式")
 
-    @field_validator("virtual_expression")
-    @classmethod
-    def validate_virtual_expression(cls, v: Optional[str], info: Any) -> Optional[str]:
+    @model_validator(mode="after")
+    def validate_virtual_expression(self) -> "DimensionCreate":
         """虚拟维度必须有表达式。"""
-        if info.data.get("is_virtual") and not v:
+        if self.is_virtual and not self.virtual_expression:
             raise ValueError("虚拟维度必须提供 virtual_expression")
-        return v
+        return self
 
 
 class DimensionUpdate(BaseModel):

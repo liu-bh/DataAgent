@@ -9,6 +9,7 @@ import json
 
 import httpx
 import pytest
+from unittest.mock import AsyncMock
 
 from datapilot_llm.client import (
     LLMError,
@@ -179,11 +180,8 @@ class TestChatCompletion:
 
             return MockResponse()
 
-        client._get_client = lambda: type(
-            "C",
-            (),
-            {"post": mock_post},
-        )()
+        mock_client = type("C", (), {"post": mock_post})()
+        client._get_client = AsyncMock(return_value=mock_client)
 
         result = await client.chat_completion("qwen-turbo", "SELECT 1")
         assert result["content"] == "SELECT 1"
@@ -214,7 +212,7 @@ class TestChatCompletion:
             return Mock500Response()
 
         mock_client = type("C", (), {"post": mock_post})()
-        client._get_client = lambda: mock_client
+        client._get_client = AsyncMock(return_value=mock_client)
 
         with pytest.raises(LLMError) as exc_info:
             await client.chat_completion("qwen-turbo", "test")
@@ -247,7 +245,7 @@ class TestChatCompletion:
             return Mock400Response()
 
         mock_client = type("C", (), {"post": mock_post})()
-        client._get_client = lambda: mock_client
+        client._get_client = AsyncMock(return_value=mock_client)
 
         with pytest.raises(LLMError) as exc_info:
             await client.chat_completion("qwen-turbo", "test")
@@ -282,7 +280,7 @@ class TestChatCompletion:
             return MockResponse()
 
         mock_client = type("C", (), {"post": mock_post})()
-        client._get_client = lambda: mock_client
+        client._get_client = AsyncMock(return_value=mock_client)
 
         await client.chat_completion(
             "qwen-turbo", "test", json_mode=True
@@ -317,7 +315,7 @@ class TestChatCompletion:
             return MockResponse()
 
         mock_client = type("C", (), {"post": mock_post})()
-        client._get_client = lambda: mock_client
+        client._get_client = AsyncMock(return_value=mock_client)
 
         await client.chat_completion(
             "qwen-turbo", "hello", system="You are a SQL expert."
