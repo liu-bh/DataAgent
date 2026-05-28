@@ -11,7 +11,7 @@ from datapilot_dag.executor.registry import ExecutorRegistry
 from datapilot_dag.executor.result import DAGResult, TaskResult, TaskStatus
 from datapilot_dag.executor.scheduler import DAGScheduler
 
-from tests.unit.test_executor._mocks import FakeDAGraph as MockDAGraph, MockDAGNode
+from tests.unit.test_executor._mocks import FakeDAGraph, MockDAGNode
 
 
 class _MockExecutor(BaseTaskExecutor):
@@ -67,7 +67,7 @@ class TestDAGScheduler:
         )
 
     @pytest.mark.asyncio
-    async def test_execute_simple_dag(self, simple_dag: MockDAGGraph) -> None:
+    async def test_execute_simple_dag(self, simple_dag: FakeDAGraph) -> None:
         """执行简单线性 DAG。"""
         executor = _MockExecutor(result={"value": 42})
         scheduler = self._make_scheduler(
@@ -85,7 +85,7 @@ class TestDAGScheduler:
         )
 
     @pytest.mark.asyncio
-    async def test_execute_parallel_dag(self, parallel_dag: MockDAGGraph) -> None:
+    async def test_execute_parallel_dag(self, parallel_dag: FakeDAGraph) -> None:
         """执行并行 DAG。"""
         executor = _MockExecutor(result={"ok": True})
         scheduler = self._make_scheduler(
@@ -105,7 +105,7 @@ class TestDAGScheduler:
     async def test_execute_empty_dag(self) -> None:
         """执行空 DAG。"""
         scheduler = self._make_scheduler()
-        dag = MockDAGGraph(dag_id="empty-dag", nodes={})
+        dag = FakeDAGraph(dag_id="empty-dag", nodes={})
 
         result = await scheduler.execute(dag)
 
@@ -122,7 +122,7 @@ class TestDAGScheduler:
             max_retry=3,
         )
 
-        dag = MockDAGGraph(
+        dag = FakeDAGraph(
             dag_id="retry-dag",
             nodes={
                 "A": MockDAGNode(node_id="A", task_type="sql", config={"sql": "SELECT 1"}),
@@ -145,7 +145,7 @@ class TestDAGScheduler:
             max_retry=2,
         )
 
-        dag = MockDAGGraph(
+        dag = FakeDAGraph(
             dag_id="fail-dag",
             nodes={
                 "A": MockDAGNode(node_id="A", task_type="sql", config={"sql": "SELECT 1"}),
@@ -168,7 +168,7 @@ class TestDAGScheduler:
             task_timeout=0.1,
         )
 
-        dag = MockDAGGraph(
+        dag = FakeDAGraph(
             dag_id="timeout-dag",
             nodes={
                 "A": MockDAGNode(node_id="A", task_type="sql", config={"sql": "SELECT 1"}),
@@ -183,7 +183,7 @@ class TestDAGScheduler:
         assert "超时" in task_result.error
 
     @pytest.mark.asyncio
-    async def test_conditional_skip(self, conditional_dag: MockDAGGraph) -> None:
+    async def test_conditional_skip(self, conditional_dag: FakeDAGraph) -> None:
         """条件不满足时跳过节点。"""
         executor = _MockExecutor(result={"ok": True})
         scheduler = self._make_scheduler(
@@ -199,7 +199,7 @@ class TestDAGScheduler:
         assert result.task_results["B"].status == TaskStatus.SKIPPED.value
 
     @pytest.mark.asyncio
-    async def test_conditional_pass(self, conditional_dag: MockDAGGraph) -> None:
+    async def test_conditional_pass(self, conditional_dag: FakeDAGraph) -> None:
         """条件满足时执行节点。"""
         executor = _MockExecutor(result={"ok": True})
         scheduler = self._make_scheduler(
@@ -218,7 +218,7 @@ class TestDAGScheduler:
         """未注册的任务类型导致失败。"""
         scheduler = self._make_scheduler()
 
-        dag = MockDAGGraph(
+        dag = FakeDAGraph(
             dag_id="unknown-dag",
             nodes={
                 "A": MockDAGNode(node_id="A", task_type="unknown", config={}),
@@ -249,7 +249,7 @@ class TestDAGScheduler:
             executors={"sql": _ContextAwareExecutor(), "llm": _ContextAwareExecutor()},
         )
 
-        dag = MockDAGGraph(
+        dag = FakeDAGraph(
             dag_id="context-dag",
             nodes={
                 "A": MockDAGNode(node_id="A", task_type="sql", config={}),
@@ -283,7 +283,7 @@ class TestDAGScheduler:
             "B": MockDAGNode(node_id="B", task_type="sql", config={}, dependencies=["A"]),
             "C": MockDAGNode(node_id="C", task_type="sql", config={}, dependencies=["B"]),
         }
-        dag = MockDAGGraph(dag_id="deep-dag", nodes=nodes)
+        dag = FakeDAGraph(dag_id="deep-dag", nodes=nodes)
 
         result = await scheduler.execute(dag)
 
@@ -346,7 +346,7 @@ class TestDAGScheduler:
         assert scheduler._registry.has("python")
 
     @pytest.mark.asyncio
-    async def test_execute_with_initial_context(self, simple_dag: MockDAGGraph) -> None:
+    async def test_execute_with_initial_context(self, simple_dag: FakeDAGraph) -> None:
         """传入初始 context。"""
         executor = _MockExecutor(result={"ok": True})
         scheduler = self._make_scheduler(executors={"sql": executor, "llm": executor})
