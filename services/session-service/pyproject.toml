@@ -10,4 +10,5 @@ dependencies = [
     "python-jose[cryptography]>=3.3",
     "alembic>=1.14",
     "datapilot-common",
+    "prometheus-fastapi-instrumentator>=7.0",
 ]

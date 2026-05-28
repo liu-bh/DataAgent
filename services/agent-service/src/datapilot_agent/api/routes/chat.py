@@ -1,9 +1,12 @@
 """聊天路由 Stub：同步消息与 SSE 流式响应。"""
 
+import asyncio
+import json
 import uuid
 
 from fastapi import APIRouter, Header
 from pydantic import BaseModel
+from sse_starlette.sse import EventSourceResponse
 
 router = APIRouter(prefix="/api/v1/chat", tags=["chat"])
 
@@ -46,17 +49,54 @@ async def chat_message(
 async def chat_stream(
     body: ChatMessageRequest,
     authorization: str = Header(None, description="Bearer {token}"),
-) -> dict:
-    """发送消息（SSE 流式响应 Stub）。
+) -> EventSourceResponse:
+    """发送消息（SSE 流式响应）。
 
-    TODO: 实现 SSE 流式响应，使用 sse-starlette
+    阶段式推送：status → sql → message → done。
+    TODO: Sprint 12 接入 NL2SQL 引擎和 LLM 推理，替换 stub。
     """
-    # Stub: 返回 JSON 说明而非真实 SSE 流
-    return {
-        "message": "SSE 流式端点 Stub。生产环境应返回 text/event-stream。",
-        "session_id": str(body.session_id),
-        "content_preview": body.content[:50],
-    }
+
+    async def event_generator():
+        message_id = str(uuid.uuid4())
+
+        # 阶段 1: 状态 - 正在分析问题
+        yield {
+            "event": "status",
+            "data": json.dumps(
+                {"status": "thinking", "message": "正在分析问题..."}
+            ),
+        }
+        await asyncio.sleep(0.5)
+
+        # 阶段 2: SQL
+        stub_sql = "SELECT 1 LIMIT 1"
+        yield {
+            "event": "sql",
+            "data": json.dumps(
+                {"sql": stub_sql, "dialect": "mysql"}
+            ),
+        }
+        await asyncio.sleep(0.5)
+
+        # 阶段 3: 消息
+        yield {
+            "event": "message",
+            "data": json.dumps(
+                {
+                    "content": f"查询结果如下（Stub 模式）：收到问题「{body.content}」。Agent 服务尚未接入 LLM 引擎。",
+                    "message_id": message_id,
+                }
+            ),
+        }
+        await asyncio.sleep(0.3)
+
+        # 阶段 4: 完成
+        yield {
+            "event": "done",
+            "data": json.dumps({"message_id": message_id}),
+        }
+
+    return EventSourceResponse(event_generator())
 
 
 @router.post("/execute-sql")

@@ -100,6 +100,9 @@ disallow_untyped_defs = false
 testpaths = ["tests"]
 asyncio_mode = "auto"
 addopts = "-v --tb=short"
+markers = [
+    "e2e = 'E2E tests (require running services)'",
+]
 
 [tool.coverage.run]
 source = ["services", "libs"]

@@ -77,8 +77,8 @@ jobs:
         run: |
           COVERAGE=$(uv run python -c "import xml.etree.ElementTree as ET; r=ET.parse('coverage.xml').getroot(); print(float(r.attrib.get('line-rate', 0))*100)")
           echo "Coverage: ${COVERAGE}%"
-          # 覆盖率低于 70% 阻断 (Phase1 初期可放宽)
-          # if (( $(echo "$COVERAGE < 70" | bc -l) )); then echo "ERROR: Coverage ${COVERAGE}% < 70%"; exit 1; fi
+          # 覆盖率低于 70% 阻断
+          python -c "import sys; coverage = float('${COVERAGE}'); sys.exit(0 if coverage >= 70 else 1)" || (echo "ERROR: Coverage ${COVERAGE}% < 70%"; exit 1)
 
   # ============================================
   # Job 2: 前端检查

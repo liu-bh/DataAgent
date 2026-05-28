@@ -11,6 +11,7 @@ dependencies = [
     "httpx>=0.27",
     "datapilot-common",
     "datapilot-sql",
+    "prometheus-fastapi-instrumentator>=7.0",
 ]
 
 [build-system]

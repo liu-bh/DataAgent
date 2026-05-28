@@ -7,6 +7,7 @@ import os
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from datapilot_session.api.routes.sessions import router as sessions_router
 from datapilot_session.exceptions import AppError
@@ -40,6 +41,10 @@ async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
 @app.get("/health")
 async def health() -> dict:
     return {"status": "ok", "service": "session"}
+
+
+# Prometheus 指标导出
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 
 if __name__ == "__main__":

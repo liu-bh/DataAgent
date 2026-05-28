@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from datapilot_queryexec.api import config_router, execute_router, health_router
 from datapilot_queryexec.executor.engine import QueryEngine
@@ -58,6 +59,9 @@ app = FastAPI(
 app.include_router(execute_router)
 app.include_router(health_router)
 app.include_router(config_router)
+
+# Prometheus 指标导出
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 
 @app.get("/health")

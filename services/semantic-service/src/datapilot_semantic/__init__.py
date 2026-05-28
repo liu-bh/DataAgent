@@ -6,6 +6,7 @@ import os
 
 import uvicorn
 from fastapi import FastAPI
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from datapilot_semantic.api.routes.data_sources import router as data_sources_router
 from datapilot_semantic.api.routes.dimensions import router as dimensions_router
@@ -27,6 +28,10 @@ app.include_router(search_router)
 @app.get("/health")
 async def health():
     return {"status": "ok", "service": "semantic"}
+
+
+# Prometheus 指标导出
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 
 if __name__ == "__main__":

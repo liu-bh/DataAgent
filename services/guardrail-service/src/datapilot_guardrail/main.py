@@ -10,6 +10,7 @@ import os
 import structlog
 import uvicorn
 from fastapi import FastAPI
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from datapilot_guardrail import __version__
 from datapilot_guardrail.api.routes.guardrail import router as guardrail_router
@@ -43,6 +44,9 @@ async def health() -> dict[str, str]:
 # ---------------------------------------------------------------------------
 
 app.include_router(guardrail_router)
+
+# Prometheus 指标导出
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 # ---------------------------------------------------------------------------
 # 启动入口

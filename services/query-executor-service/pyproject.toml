@@ -14,4 +14,5 @@ dependencies = [
     "redis>=5.0",
     "sqlglot>=26.0",
     "datapilot-common",
+    "prometheus-fastapi-instrumentator>=7.0",
 ]

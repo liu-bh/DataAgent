@@ -11,4 +11,5 @@ dependencies = [
     "alembic>=1.14",
     "email-validator>=2.0",
     "datapilot-common",
+    "prometheus-fastapi-instrumentator>=7.0",
 ]

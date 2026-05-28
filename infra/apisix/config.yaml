@@ -80,12 +80,257 @@ routes:
         rejected_code: 429
         key_type: "var"
         key: "remote_addr"
+    proxy_buffering: false
+    proxy_read_timeout: 300
 
   # ============================================
   # Semantic Service — /api/v1/semantic-models/*
   # ============================================
   - uri: /api/v1/semantic-models/*
     name: semantic-service
+    upstream:
+      type: roundrobin
+      nodes:
+        "semantic-service:8001": 1
+    plugins:
+      cors:
+        allow_origins: "*"
+        allow_methods: "GET,POST,PUT,DELETE,OPTIONS,PATCH"
+        allow_headers: "Authorization,Content-Type,X-Request-ID"
+        expose_headers: "X-Request-ID"
+        max_age: 3600
+      jwt-auth:
+        secret: "$JWT_SECRET_KEY"
+        algorithm: "HS256"
+        exp: 900
+      limit-count:
+        count: 1000
+        time_window: 1
+        rejected_code: 429
+        key_type: "var"
+        key: "remote_addr"
+
+  # ============================================
+  # Agent Service (DAG) — /api/v1/dag/*
+  # ============================================
+  - uri: /api/v1/dag/*
+    name: dag
+    upstream:
+      type: roundrobin
+      nodes:
+        "agent-service:8000": 1
+    plugins:
+      cors:
+        allow_origins: "*"
+        allow_methods: "GET,POST,PUT,DELETE,OPTIONS,PATCH"
+        allow_headers: "Authorization,Content-Type,X-Request-ID"
+        expose_headers: "X-Request-ID"
+        max_age: 3600
+      jwt-auth:
+        secret: "$JWT_SECRET_KEY"
+        algorithm: "HS256"
+        exp: 900
+      limit-count:
+        count: 1000
+        time_window: 1
+        rejected_code: 429
+        key_type: "var"
+        key: "remote_addr"
+
+  # ============================================
+  # Agent Service (RCA) — /api/v1/rca/*
+  # ============================================
+  - uri: /api/v1/rca/*
+    name: rca
+    upstream:
+      type: roundrobin
+      nodes:
+        "agent-service:8000": 1
+    plugins:
+      cors:
+        allow_origins: "*"
+        allow_methods: "GET,POST,PUT,DELETE,OPTIONS,PATCH"
+        allow_headers: "Authorization,Content-Type,X-Request-ID"
+        expose_headers: "X-Request-ID"
+        max_age: 3600
+      jwt-auth:
+        secret: "$JWT_SECRET_KEY"
+        algorithm: "HS256"
+        exp: 900
+      limit-count:
+        count: 1000
+        time_window: 1
+        rejected_code: 429
+        key_type: "var"
+        key: "remote_addr"
+
+  # ============================================
+  # Agent Service (Tools) — /api/v1/tools/*
+  # ============================================
+  - uri: /api/v1/tools/*
+    name: tools
+    upstream:
+      type: roundrobin
+      nodes:
+        "agent-service:8000": 1
+    plugins:
+      cors:
+        allow_origins: "*"
+        allow_methods: "GET,POST,PUT,DELETE,OPTIONS,PATCH"
+        allow_headers: "Authorization,Content-Type,X-Request-ID"
+        expose_headers: "X-Request-ID"
+        max_age: 3600
+      jwt-auth:
+        secret: "$JWT_SECRET_KEY"
+        algorithm: "HS256"
+        exp: 900
+      limit-count:
+        count: 1000
+        time_window: 1
+        rejected_code: 429
+        key_type: "var"
+        key: "remote_addr"
+
+  # ============================================
+  # Agent Service (Chart) — /api/v1/chart/*
+  # ============================================
+  - uri: /api/v1/chart/*
+    name: chart
+    upstream:
+      type: roundrobin
+      nodes:
+        "agent-service:8000": 1
+    plugins:
+      cors:
+        allow_origins: "*"
+        allow_methods: "GET,POST,PUT,DELETE,OPTIONS,PATCH"
+        allow_headers: "Authorization,Content-Type,X-Request-ID"
+        expose_headers: "X-Request-ID"
+        max_age: 3600
+      jwt-auth:
+        secret: "$JWT_SECRET_KEY"
+        algorithm: "HS256"
+        exp: 900
+      limit-count:
+        count: 1000
+        time_window: 1
+        rejected_code: 429
+        key_type: "var"
+        key: "remote_addr"
+
+  # ============================================
+  # Agent Service (Dashboard) — /api/v1/dashboard/*
+  # ============================================
+  - uri: /api/v1/dashboard/*
+    name: dashboard
+    upstream:
+      type: roundrobin
+      nodes:
+        "agent-service:8000": 1
+    plugins:
+      cors:
+        allow_origins: "*"
+        allow_methods: "GET,POST,PUT,DELETE,OPTIONS,PATCH"
+        allow_headers: "Authorization,Content-Type,X-Request-ID"
+        expose_headers: "X-Request-ID"
+        max_age: 3600
+      jwt-auth:
+        secret: "$JWT_SECRET_KEY"
+        algorithm: "HS256"
+        exp: 900
+      limit-count:
+        count: 1000
+        time_window: 1
+        rejected_code: 429
+        key_type: "var"
+        key: "remote_addr"
+
+  # ============================================
+  # Semantic Service (Data Sources) — /api/v1/data-sources/*
+  # ============================================
+  - uri: /api/v1/data-sources/*
+    name: data-sources
+    upstream:
+      type: roundrobin
+      nodes:
+        "semantic-service:8001": 1
+    plugins:
+      cors:
+        allow_origins: "*"
+        allow_methods: "GET,POST,PUT,DELETE,OPTIONS,PATCH"
+        allow_headers: "Authorization,Content-Type,X-Request-ID"
+        expose_headers: "X-Request-ID"
+        max_age: 3600
+      jwt-auth:
+        secret: "$JWT_SECRET_KEY"
+        algorithm: "HS256"
+        exp: 900
+      limit-count:
+        count: 1000
+        time_window: 1
+        rejected_code: 429
+        key_type: "var"
+        key: "remote_addr"
+
+  # ============================================
+  # Semantic Service (Metrics) — /api/v1/metrics/*
+  # ============================================
+  - uri: /api/v1/metrics/*
+    name: metrics
+    upstream:
+      type: roundrobin
+      nodes:
+        "semantic-service:8001": 1
+    plugins:
+      cors:
+        allow_origins: "*"
+        allow_methods: "GET,POST,PUT,DELETE,OPTIONS,PATCH"
+        allow_headers: "Authorization,Content-Type,X-Request-ID"
+        expose_headers: "X-Request-ID"
+        max_age: 3600
+      jwt-auth:
+        secret: "$JWT_SECRET_KEY"
+        algorithm: "HS256"
+        exp: 900
+      limit-count:
+        count: 1000
+        time_window: 1
+        rejected_code: 429
+        key_type: "var"
+        key: "remote_addr"
+
+  # ============================================
+  # Semantic Service (Dimensions) — /api/v1/dimensions/*
+  # ============================================
+  - uri: /api/v1/dimensions/*
+    name: dimensions
+    upstream:
+      type: roundrobin
+      nodes:
+        "semantic-service:8001": 1
+    plugins:
+      cors:
+        allow_origins: "*"
+        allow_methods: "GET,POST,PUT,DELETE,OPTIONS,PATCH"
+        allow_headers: "Authorization,Content-Type,X-Request-ID"
+        expose_headers: "X-Request-ID"
+        max_age: 3600
+      jwt-auth:
+        secret: "$JWT_SECRET_KEY"
+        algorithm: "HS256"
+        exp: 900
+      limit-count:
+        count: 1000
+        time_window: 1
+        rejected_code: 429
+        key_type: "var"
+        key: "remote_addr"
+
+  # ============================================
+  # Semantic Service (Search) — /api/v1/search/*
+  # ============================================
+  - uri: /api/v1/search/*
+    name: search
     upstream:
       type: roundrobin
       nodes:

@@ -9,6 +9,7 @@ import os
 
 import uvicorn
 from fastapi import FastAPI
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from .api.routes.sqlgen import router as sqlgen_router
 from .generator import NL2SQLPipeline
@@ -25,6 +26,10 @@ app.include_router(sqlgen_router)
 async def health() -> dict[str, str]:
     """健康检查端点。"""
     return {"status": "ok", "service": "sqlgen"}
+
+
+# Prometheus 指标导出
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 
 if __name__ == "__main__":

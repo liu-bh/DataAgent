@@ -13,6 +13,7 @@ dependencies = [
     "datapilot-sql",
     "datapilot-prompt",
     "datapilot-llm",
+    "prometheus-fastapi-instrumentator>=7.0",
 ]
 
 [build-system]

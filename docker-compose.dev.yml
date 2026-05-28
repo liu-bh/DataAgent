@@ -101,8 +101,59 @@ services:
     depends_on:
       - prometheus
 
+  # ============================================
+  # etcd - APISIX 配置存储
+  # ============================================
+  etcd:
+    image: bitnami/etcd:3.5
+    container_name: datapilot-etcd
+    environment:
+      ALLOW_NONE_AUTHENTICATION: "yes"
+      ETCD_ADVERTISE_CLIENT_URLS: "http://etcd:2379"
+      ETCD_LISTEN_CLIENT_URLS: "http://0.0.0.0:2379"
+    ports:
+      - "2379:2379"
+    volumes:
+      - etcd_data:/bitnami/etcd
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ============================================
+  # APISIX API 网关
+  # ============================================
+  apisix:
+    image: apache/apisix:latest-debian
+    container_name: datapilot-apisix
+    restart: unless-stopped
+    ports:
+      - "9080:9080"    # Proxy HTTP
+      - "9443:9443"    # Proxy HTTPS
+      - "9180:9180"    # Admin API
+    volumes:
+      - ./infra/apisix/config.yaml:/usr/local/apisix/conf/config.yaml:ro
+    depends_on:
+      etcd:
+        condition: service_healthy
+
+  # ============================================
+  # Loki (日志聚合)
+  # ============================================
+  loki:
+    image: grafana/loki:latest
+    container_name: datapilot-loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+
 volumes:
   postgres_data:
   redis_data:
   minio_data:
   grafana_data:
+  etcd_data:
+  loki_data:

@@ -11,4 +11,5 @@ dependencies = [
     "datapilot-license",
     "datapilot-dag",
     "httpx>=0.27",
+    "prometheus-fastapi-instrumentator>=7.0",
 ]
