@@ -288,9 +288,9 @@ class TestPythonDAG:
                         "code": (
                             "upstream = context.get('__result_step_a', {})\n"
                             "if upstream.get('success'):\n"
-                            "    print('上游执行成功')\n"
+                            "    print('UPSTREAM_OK')\n"
                             "else:\n"
-                            "    print('上游执行失败')"
+                            "    print('UPSTREAM_FAIL')"
                         ),
                     },
                     dependencies=["step_a"],
@@ -307,7 +307,7 @@ class TestPythonDAG:
         # 验证 step_b 收到了 step_a 的结果
         step_b_output = result.task_results["step_b"].output
         assert step_b_output["success"] is True
-        assert "上游执行成功" in step_b_output["stdout"]
+        assert "UPSTREAM_OK" in step_b_output["stdout"]
 
     @pytest.mark.asyncio
     async def test_parallel_python_tasks(
