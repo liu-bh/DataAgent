@@ -14,6 +14,8 @@ import type {
   TopMetricItem,
   QueryDistribution,
 } from '@/types/dashboard';
+import type { Session } from '@/api/sessions';
+import type { User } from '@/api/users';
 
 // ==================== Mock 数据 ====================
 
@@ -376,6 +378,84 @@ const MOCK_DIMENSIONS: Dimension[] = [
     is_virtual: false,
     created_at: '2026-04-16T10:00:00+08:00',
     updated_at: '2026-04-16T10:00:00+08:00',
+  },
+];
+
+const MOCK_SESSIONS: Session[] = [
+  {
+    id: 'sess-001',
+    title: 'Q1 营收分析',
+    message_count: 12,
+    is_archived: false,
+    created_at: '2026-05-20T10:00:00+08:00',
+    updated_at: '2026-05-20T11:30:00+08:00',
+  },
+  {
+    id: 'sess-002',
+    title: '用户增长趋势',
+    message_count: 8,
+    is_archived: false,
+    created_at: '2026-05-21T09:00:00+08:00',
+    updated_at: '2026-05-21T10:15:00+08:00',
+  },
+  {
+    id: 'sess-003',
+    title: '退货率异常排查',
+    message_count: 15,
+    is_archived: true,
+    created_at: '2026-05-15T14:00:00+08:00',
+    updated_at: '2026-05-16T16:00:00+08:00',
+  },
+  {
+    id: 'sess-004',
+    title: '物流时效对比',
+    message_count: 6,
+    is_archived: false,
+    created_at: '2026-05-25T08:30:00+08:00',
+    updated_at: '2026-05-25T09:45:00+08:00',
+  },
+  {
+    id: 'sess-005',
+    title: '商品品类结构',
+    message_count: 10,
+    is_archived: false,
+    created_at: '2026-05-26T13:00:00+08:00',
+    updated_at: '2026-05-26T14:20:00+08:00',
+  },
+];
+
+const MOCK_USERS: User[] = [
+  {
+    id: 'user-001',
+    email: 'admin@datapilot.com',
+    role: 'admin',
+    is_active: true,
+    tenant_id: 'tenant-001',
+    created_at: '2026-01-01T10:00:00+08:00',
+  },
+  {
+    id: 'user-002',
+    email: 'analyst@datapilot.com',
+    role: 'analyst',
+    is_active: true,
+    tenant_id: 'tenant-001',
+    created_at: '2026-02-15T09:00:00+08:00',
+  },
+  {
+    id: 'user-003',
+    email: 'viewer@datapilot.com',
+    role: 'viewer',
+    is_active: true,
+    tenant_id: 'tenant-001',
+    created_at: '2026-03-20T14:00:00+08:00',
+  },
+  {
+    id: 'user-004',
+    email: 'disabled@datapilot.com',
+    role: 'analyst',
+    is_active: false,
+    tenant_id: 'tenant-002',
+    created_at: '2026-04-10T11:00:00+08:00',
   },
 ];
 
@@ -794,5 +874,73 @@ export const handlers = [
       { type: 'out_of_scope', count: 3380, percentage: 8.8 },
     ];
     return HttpResponse.json({ data: distribution });
+  }),
+
+  // -------------------- 会话管理 CRUD --------------------
+
+  http.get('/api/v1/sessions', ({ request }) => {
+    const url = new URL(request.url);
+    const limit = parseInt(url.searchParams.get('limit') ?? '50', 10);
+    return HttpResponse.json({ data: MOCK_SESSIONS.slice(0, limit) });
+  }),
+
+  http.get('/api/v1/sessions/:id', ({ params }) => {
+    const session = MOCK_SESSIONS.find((s) => s.id === params.id);
+    if (!session) {
+      return HttpResponse.json(
+        { error: { code: 'NOT_FOUND', message: '会话不存在' } },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json({ data: session });
+  }),
+
+  http.delete('/api/v1/sessions/:id', () => {
+    return HttpResponse.json({ data: { message: '已删除' } });
+  }),
+
+  http.patch('/api/v1/sessions/:id', async ({ params, request }) => {
+    const body = (await request.json()) as Partial<Session>;
+    const session = MOCK_SESSIONS.find((s) => s.id === params.id);
+    if (!session) {
+      return HttpResponse.json(
+        { error: { code: 'NOT_FOUND', message: '会话不存在' } },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json({
+      data: { ...session, ...body, updated_at: new Date().toISOString() },
+    });
+  }),
+
+  // -------------------- 用户管理 CRUD --------------------
+
+  http.get('/api/v1/auth/users', () => {
+    return HttpResponse.json({ data: MOCK_USERS });
+  }),
+
+  http.get('/api/v1/auth/users/:id', ({ params }) => {
+    const user = MOCK_USERS.find((u) => u.id === params.id);
+    if (!user) {
+      return HttpResponse.json(
+        { error: { code: 'NOT_FOUND', message: '用户不存在' } },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json({ data: user });
+  }),
+
+  http.patch('/api/v1/auth/users/:id', async ({ params, request }) => {
+    const body = (await request.json()) as Partial<User>;
+    const user = MOCK_USERS.find((u) => u.id === params.id);
+    if (!user) {
+      return HttpResponse.json(
+        { error: { code: 'NOT_FOUND', message: '用户不存在' } },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json({
+      data: { ...user, ...body },
+    });
   }),
 ];

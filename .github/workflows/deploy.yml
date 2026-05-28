@@ -74,3 +74,16 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             PORT=${{ matrix.port }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+      - name: Configure kubeconfig
+        run: echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > kubeconfig && export KUBECONFIG=kubeconfig
+      - name: Deploy to Kubernetes
+        run: kubectl apply -f infra/k8s/ --recursive

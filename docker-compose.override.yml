@@ -145,21 +145,3 @@ services:
       redis:
         condition: service_healthy
     command: ["uv", "run", "python", "-m", "datapilot_session", "--reload"]
-
-  # ============================================
-  # APISIX Gateway (dev)
-  # ============================================
-  apisix:
-    image: apache/apisix:latest-debian
-    container_name: datapilot-apisix
-    ports:
-      - "9180:9180"   # APISIX admin
-      - "9080:9080"   # APISIX proxy HTTP
-      - "9443:9443"   # APISIX proxy HTTPS
-    volumes:
-      - ./infra/apisix/config.yaml:/usr/local/apisix/conf/config.yaml:ro
-    depends_on:
-      - agent-service
-      - semantic-service
-      - auth-service
-      - session-service

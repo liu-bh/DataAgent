@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: datapilot
+  labels:
+    app.kubernetes.io/name: datapilot
+    app.kubernetes.io/part-of: datapilot

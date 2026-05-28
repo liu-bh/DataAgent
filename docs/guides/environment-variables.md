@@ -154,9 +154,25 @@
 | Jaeger | 16686 | 链路追踪 UI |
 | Prometheus | 9090 | 监控指标 |
 | Grafana | 3000 | 监控大盘（默认 admin/admin） |
-| APISIX | 9180/9443 | API 网关 |
+| etcd | 2379 | APISIX 配置存储 |
+| APISIX | 9080 (Proxy HTTP), 9180 (Admin API), 9443 (Proxy HTTPS) | API 网关 |
+| Loki | 3100 | 日志聚合 |
 
-## 11. LLM API Key 获取
+## 11. 指标采集
+
+所有服务均暴露 `/metrics` 端点（Prometheus 格式），由 `prometheus-fastapi-instrumentator` 自动采集请求计数、延迟直方图、进程指标。
+
+| 服务 | 指标地址 |
+|------|---------|
+| agent-service | http://localhost:8000/metrics |
+| semantic-service | http://localhost:8001/metrics |
+| sql-generator-service | http://localhost:8002/metrics |
+| query-executor-service | http://localhost:8003/metrics |
+| auth-service | http://localhost:8004/metrics |
+| guardrail-service | http://localhost:8005/metrics |
+| session-service | http://localhost:8006/metrics |
+
+## 12. LLM API Key 获取
 
 ### DeepSeek
 1. 注册 https://platform.deepseek.com

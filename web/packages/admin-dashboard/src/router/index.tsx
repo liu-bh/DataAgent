@@ -10,6 +10,8 @@ const SemanticModelsPage = lazy(() => import('@/pages/SemanticModels'));
 const SemanticModelDetailPage = lazy(() => import('@/pages/SemanticModels/DetailPage'));
 const MetricsPage = lazy(() => import('@/pages/Metrics'));
 const DimensionsPage = lazy(() => import('@/pages/Dimensions'));
+const SessionsPage = lazy(() => import('@/pages/Sessions'));
+const UsersPage = lazy(() => import('@/pages/Users'));
 
 /** 路由配置 */
 export const router = createBrowserRouter([
@@ -53,6 +55,14 @@ export const router = createBrowserRouter([
       {
         path: 'dimensions',
         element: <DimensionsPage />,
+      },
+      {
+        path: 'sessions',
+        element: <SessionsPage />,
+      },
+      {
+        path: 'users',
+        element: <UsersPage />,
       },
     ],
   },
