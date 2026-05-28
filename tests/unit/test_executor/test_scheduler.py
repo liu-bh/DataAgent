@@ -11,7 +11,7 @@ from datapilot_dag.executor.registry import ExecutorRegistry
 from datapilot_dag.executor.result import DAGResult, TaskResult, TaskStatus
 from datapilot_dag.executor.scheduler import DAGScheduler
 
-from tests.unit.test_executor.conftest import MockDAGGraph, MockDAGNode
+from tests.unit.test_executor._mocks import FakeDAGraph as MockDAGraph, MockDAGNode
 
 
 class _MockExecutor(BaseTaskExecutor):

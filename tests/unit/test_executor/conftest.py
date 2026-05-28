@@ -1,7 +1,5 @@
 """执行器模块测试公共 fixtures。"""
 
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -18,19 +16,19 @@ class MockDAGNode:
 
     node_id: str
     task_type: str = "sql"
-    config: dict[str, Any] = field(default_factory=dict)
-    dependencies: list[str] = field(default_factory=list)
+    config: dict = field(default_factory=dict)
+    dependencies: list = field(default_factory=list)
     condition: str = ""
 
 
-@dataclass
 class MockDAGraph:
     """模拟 DAGraph。"""
 
-    dag_id: str
-    nodes: dict[str, MockDAGNode] = field(default_factory=dict)
+    def __init__(self, dag_id: str, nodes: dict = None) -> None:
+        self.dag_id = dag_id
+        self.nodes: dict[str, MockDAGNode] = nodes or {}
 
-    def topological_levels(self) -> list[list[str]]:
+    def topological_levels(self) -> list:
         """返回拓扑排序的层级列表。"""
         if not self.nodes:
             return []

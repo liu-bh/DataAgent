@@ -388,10 +388,11 @@ class HybridSearcher:
         # 计算 RRF 得分
         scored: list[SearchHit] = []
         for key in all_keys:
-            # 语义搜索排名（1-based）
-            sem_rank = semantic_results[key].semantic_rank
-            # 关键词搜索排名（1-based）
-            kw_rank = keyword_results[key].keyword_rank
+            # 语义搜索排名（1-based），key 可能只存在于一路结果中
+            sem_item = semantic_results.get(key)
+            kw_item = keyword_results.get(key)
+            sem_rank = sem_item.semantic_rank if sem_item else None
+            kw_rank = kw_item.keyword_rank if kw_item else None
 
             rrf_score = 0.0
             if sem_rank is not None:

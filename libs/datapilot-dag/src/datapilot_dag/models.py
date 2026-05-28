@@ -17,6 +17,7 @@ class TaskType(StrEnum):
     SEARCH = "search"
     ACTION = "action"
     LLM = "llm"
+    COMPUTE = "compute"
 
 
 class TaskStatus(StrEnum):
@@ -63,6 +64,13 @@ class DAGraph:
     nodes: dict[str, DAGNode] = field(default_factory=dict)
     edges: list[DAGEdge] = field(default_factory=list)
     dag_id: str = ""
+    context: dict[str, Any] = field(default_factory=dict)
+
+    @staticmethod
+    def generate_id() -> str:
+        """生成唯一 DAG ID。"""
+        import uuid
+        return f"dag-{uuid.uuid4().hex[:12]}"
 
     # ------------------------------------------------------------------
     # 节点操作

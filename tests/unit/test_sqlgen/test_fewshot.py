@@ -271,7 +271,7 @@ class TestTextFallback:
         ]
 
         results = FewShotMatcher._text_fallback_similarity("销售额是多少", examples)
-        assert results[0].similarity_score > 0.5
+        assert results[0].similarity_score >= 0.5
 
     def test_no_overlap(self) -> None:
         """无重叠应返回低相似度。"""

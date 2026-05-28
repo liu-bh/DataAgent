@@ -100,7 +100,14 @@ async def execute_dag(request: DAGExecuteRequest) -> DAGExecuteResponse:
     try:
         for node_name, node in dag.nodes.items():
             try:
-                result = await node.func(**node.params)
+                func = node.metadata.get("func") if node.metadata else None
+                if func is None:
+                    task_results[node_name] = {
+                        "status": "failed",
+                        "error": "节点未配置执行函数",
+                    }
+                    break
+                result = await func(**node.config)
                 task_results[node_name] = {
                     "status": "success",
                     "result": result,

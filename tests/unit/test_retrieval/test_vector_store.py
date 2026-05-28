@@ -81,7 +81,9 @@ class TestUpsertEmbedding:
         sql_str = str(call_args.args[0].text)
         assert "metrics" in sql_str
         assert "embedding" in sql_str
-        assert "entity_id" in call_args.kwargs or call_args[1]
+        # params 作为第二个位置参数传入
+        params = call_args.args[1] if len(call_args.args) > 1 else call_args.kwargs
+        assert "entity_id" in params
 
     @pytest.mark.asyncio
     async def test_upsert_clear_embedding(self) -> None:
@@ -187,7 +189,8 @@ class TestVectorSearch:
         )
 
         call_args = session.execute.call_args
-        params = call_args.kwargs or call_args[1]
+        # params 作为第二个位置参数传入
+        params = call_args.args[1] if len(call_args.args) > 1 else call_args.kwargs
         assert "tenant_id" in params
 
     @pytest.mark.asyncio

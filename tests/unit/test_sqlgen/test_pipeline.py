@@ -14,6 +14,7 @@ from datapilot_sqlgen.generator.models import (
 from datapilot_sqlgen.generator.pipeline import NL2SQLPipeline
 from datapilot_sqlgen.generator.prompt_builder import PromptBuilder
 from datapilot_sqlgen.generator.postprocess import SQLPostProcessor
+from datapilot_sqlgen.intent.types import IntentResult, IntentType
 
 
 # ---------------------------------------------------------------------------
@@ -95,10 +96,10 @@ class TestPipelineFullFlow:
     ) -> None:
         """闲聊意图应返回文本回复而非 SQL。"""
         # 修改 intent router 返回闲聊
-        pipeline._intent_router.route = MagicMock(return_value={
-            "intent": "chitchat",
-            "confidence": 0.9,
-        })
+        pipeline._intent_router.classify = MagicMock(return_value=IntentResult(
+            intent_type=IntentType.CHITCHAT,
+            confidence=0.9,
+        ))
 
         result = await pipeline.generate(
             question="你好",
@@ -119,10 +120,10 @@ class TestPipelineFullFlow:
         tenant_id: str,
     ) -> None:
         """超出范围应返回友好提示。"""
-        pipeline._intent_router.route = MagicMock(return_value={
-            "intent": "out_of_scope",
-            "confidence": 0.85,
-        })
+        pipeline._intent_router.classify = MagicMock(return_value=IntentResult(
+            intent_type=IntentType.OUT_OF_SCOPE,
+            confidence=0.85,
+        ))
 
         result = await pipeline.generate(
             question="今天天气怎么样？",
@@ -188,7 +189,7 @@ class TestIntentRouting:
         tenant_id: str,
     ) -> None:
         """意图路由器失败时应降级为规则路由。"""
-        pipeline._intent_router.route = MagicMock(side_effect=Exception("LLM 不可用"))
+        pipeline._intent_router.classify = MagicMock(side_effect=Exception("LLM 不可用"))
 
         result = await pipeline.generate(
             question="订单量多少",

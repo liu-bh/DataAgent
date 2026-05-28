@@ -233,6 +233,10 @@ class SemanticCache:
                 return None
 
             results = self._deserialize_results(raw)
+            if not results:
+                logger.debug("semantic_cache_empty_results", query=query, key=key)
+                return None
+
             logger.debug(
                 "semantic_cache_hit",
                 query=query,

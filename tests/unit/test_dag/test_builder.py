@@ -30,10 +30,10 @@ class TestDAGBuilder:
         """构建时验证失败抛出 ValueError。"""
         with pytest.raises(ValueError, match="DAG 验证失败"):
             # 两个孤立节点（多于一个节点且无边连接）
-            DAGBuilder(dag_id="bad")
-            .add_node("a", TaskType.SQL)
-            .add_node("b", TaskType.LLM)
-            .build()
+            (DAGBuilder(dag_id="bad")
+             .add_node("a", TaskType.SQL)
+             .add_node("b", TaskType.LLM)
+             .build())
 
     def test_single_node_dag(self) -> None:
         """单节点 DAG 应通过验证（不算孤立节点）。"""

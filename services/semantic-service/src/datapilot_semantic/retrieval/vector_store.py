@@ -123,7 +123,7 @@ class VectorStore:
         self,
         entity_type: str,
         entity_id: UUID | str,
-        text: str | None = None,
+        raw_text: str | None = None,
         embedding: list[float] | None = None,
         name: str | None = None,
         description: str | None = None,
@@ -136,7 +136,7 @@ class VectorStore:
         Args:
             entity_type: 实体类型（metric/dimension/source_table）。
             entity_id: 实体 ID（UUID）。
-            text: 可选，用于日志记录的原始文本。
+            raw_text: 可选，用于日志记录的原始文本。
             embedding: 向量列表（1536 维）。如果为 None 则清除 embedding。
             name: 可选，实体名称（用于日志）。
             description: 可选，实体描述（用于日志）。

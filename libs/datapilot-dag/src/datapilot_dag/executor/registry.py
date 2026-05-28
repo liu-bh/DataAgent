@@ -5,16 +5,16 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import structlog
 
-from datapilot_dag.executor.base import BaseTaskExecutor
 from datapilot_dag.executor.llm_executor import LLMTaskExecutor
 from datapilot_dag.executor.python_executor import PythonTaskExecutor
 from datapilot_dag.executor.sql_executor import SQLTaskExecutor
 
 if TYPE_CHECKING:
+    from datapilot_dag.executor.base import BaseTaskExecutor
     from datapilot_llm.router import LLMRouter
     from datapilot_sandbox.executor import SandboxExecutor
 

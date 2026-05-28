@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
@@ -133,7 +133,7 @@ def mock_budget_manager() -> MagicMock:
 def mock_llm_router() -> MagicMock:
     """创建 mock LLM Router。"""
     router = MagicMock()
-    router.generate = MagicMock(return_value={
+    router.generate = AsyncMock(return_value={
         "content": '{"sql": "SELECT COUNT(*) FROM orders", "explanation": "统计订单数量", "confidence": 0.9}',
         "explanation": "统计订单数量",
         "confidence": 0.9,
@@ -144,34 +144,39 @@ def mock_llm_router() -> MagicMock:
 @pytest.fixture
 def mock_intent_router() -> MagicMock:
     """创建 mock Intent Router。"""
+    from datapilot_sqlgen.intent.types import IntentResult, IntentType
+
     router = MagicMock()
-    router.route = MagicMock(return_value={
-        "intent": "sql_query",
-        "confidence": 0.95,
-    })
+    router.classify = MagicMock(return_value=IntentResult(
+        intent_type=IntentType.SQL_QUERY,
+        confidence=0.95,
+    ))
     return router
 
 
 @pytest.fixture
 def mock_intent_parser() -> MagicMock:
     """创建 mock Intent Parser。"""
+    from datapilot_sqlgen.intent.types import ParsedIntent
+
     parser = MagicMock()
-    parser.parse = MagicMock(return_value={
-        "raw_question": "测试问题",
-        "intent_type": "sql_query",
-        "filters": [],
-        "metrics": ["GMV"],
-        "dimensions": ["时间"],
-        "time_range": None,
-    })
+    parser.parse = MagicMock(return_value=ParsedIntent(
+        raw_question="测试问题",
+    ))
     return parser
 
 
 @pytest.fixture
 def mock_schema_linker() -> MagicMock:
     """创建 mock Schema Linker。"""
+    from datapilot_sqlgen.intent.types import SemanticContext
+
     linker = MagicMock()
-    linker.link = MagicMock(side_effect=lambda q, ctx, tid: ctx)
+    linker.link = MagicMock(
+        return_value=SemanticContext(
+            selected_tables=["orders", "users"],
+        ),
+    )
     return linker
 
 
@@ -179,5 +184,5 @@ def mock_schema_linker() -> MagicMock:
 def mock_fewshot_matcher() -> MagicMock:
     """创建 mock FewShot Matcher。"""
     matcher = MagicMock()
-    matcher.match = MagicMock(return_value=[])
+    matcher.match = AsyncMock(return_value=[])
     return matcher

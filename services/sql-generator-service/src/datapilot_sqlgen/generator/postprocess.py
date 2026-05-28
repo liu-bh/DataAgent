@@ -189,19 +189,7 @@ class SQLPostProcessor:
         """
         try:
             import sqlglot
-            from datapilot_sql import SQLBuilder
-
-            # 通过 datapilot-sql 的 SQLBuilder 解析
-            builder = SQLBuilder(dialect=dialect)  # type: ignore[no-untyped-call]
-            return builder.parse(sql)  # type: ignore[no-untyped-call]
-        except ImportError:
-            # 降级：直接使用 sqlglot
-            try:
-                import sqlglot
-                return sqlglot.parse_one(sql, read=dialect)
-            except Exception as e:
-                logger.warning("sqlglot AST 解析失败", sql=sql[:100], error=str(e))
-                return None
+            return sqlglot.parse_one(sql, read=dialect)
         except Exception as e:
             logger.warning("SQL AST 解析失败", sql=sql[:100], error=str(e))
             return None

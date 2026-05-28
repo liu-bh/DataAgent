@@ -281,7 +281,6 @@ class PythonTaskExecutor(BaseTaskExecutor):
             执行结果字典。
         """
         import ast
-        import io
 
         # 安全检查：禁止危险导入
         _dangerous_imports = {
@@ -311,13 +310,12 @@ class PythonTaskExecutor(BaseTaskExecutor):
                     module_name = alias.name.split(".")[0]
                     if module_name in _dangerous_imports:
                         violations.append(f"禁止导入模块: {alias.name}")
-            elif isinstance(node, ast.ImportFrom):
-                if node.module:
-                    module_name = node.module.split(".")[0]
-                    if module_name in _dangerous_imports:
-                        violations.append(
-                            f"禁止从模块导入: {node.module}"
-                        )
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                module_name = node.module.split(".")[0]
+                if module_name in _dangerous_imports:
+                    violations.append(
+                        f"禁止从模块导入: {node.module}"
+                    )
 
         if violations:
             return {
@@ -373,8 +371,6 @@ class PythonTaskExecutor(BaseTaskExecutor):
         )
 
         try:
-            loop = asyncio.get_event_loop()
-
             proc = await asyncio.create_subprocess_exec(
                 sys.executable,
                 "-c",
@@ -402,7 +398,7 @@ class PythonTaskExecutor(BaseTaskExecutor):
                     "sandbox_available": False,
                 }
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 proc.kill()
                 await proc.wait()
                 return {

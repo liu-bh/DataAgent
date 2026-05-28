@@ -19,7 +19,6 @@ from datapilot_dag.executor.registry import ExecutorRegistry
 from datapilot_dag.executor.result import TaskStatus
 from datapilot_dag.executor.scheduler import DAGScheduler
 
-
 # ---------------------------------------------------------------------------
 # DAG Mock 工具
 # ---------------------------------------------------------------------------
@@ -53,7 +52,8 @@ class DAGraph:
 
         while remaining:
             level = [
-                nid for nid in remaining
+                nid
+                for nid in remaining
                 if all(dep not in remaining for dep in self.nodes[nid].dependencies)
             ]
             if not level:
@@ -128,9 +128,7 @@ class TestPythonDAG:
         assert "42" in output["stdout"]
 
     @pytest.mark.asyncio
-    async def test_python_with_data_context(
-        self, python_scheduler: DAGScheduler
-    ) -> None:
+    async def test_python_with_data_context(self, python_scheduler: DAGScheduler) -> None:
         """测试 Python 任务接收上游数据。
 
         DAG 结构：sql_node -> python_node
@@ -210,9 +208,7 @@ class TestPythonDAG:
         assert "ZeroDivisionError" in task_output["stderr"]
 
     @pytest.mark.asyncio
-    async def test_python_dangerous_code_in_dag(
-        self, python_scheduler: DAGScheduler
-    ) -> None:
+    async def test_python_dangerous_code_in_dag(self, python_scheduler: DAGScheduler) -> None:
         """测试 DAG 中的危险代码被拒绝。
 
         Python 执行器应拦截危险导入，节点状态应为 COMPLETED
@@ -237,9 +233,7 @@ class TestPythonDAG:
         assert "os" in task_output["stderr"]
 
     @pytest.mark.asyncio
-    async def test_python_timeout_in_dag(
-        self, python_scheduler: DAGScheduler
-    ) -> None:
+    async def test_python_timeout_in_dag(self, python_scheduler: DAGScheduler) -> None:
         """测试超时在 DAG 中的处理。
 
         无限循环代码应在超时后被终止。
@@ -266,9 +260,7 @@ class TestPythonDAG:
         assert "超时" in task_output["stderr"]
 
     @pytest.mark.asyncio
-    async def test_multi_step_python_dag(
-        self, python_scheduler: DAGScheduler
-    ) -> None:
+    async def test_multi_step_python_dag(self, python_scheduler: DAGScheduler) -> None:
         """测试多步骤 Python DAG：A -> B。
 
         A 计算结果，B 使用 A 的结果。
@@ -310,9 +302,7 @@ class TestPythonDAG:
         assert "UPSTREAM_OK" in step_b_output["stdout"]
 
     @pytest.mark.asyncio
-    async def test_parallel_python_tasks(
-        self, python_scheduler: DAGScheduler
-    ) -> None:
+    async def test_parallel_python_tasks(self, python_scheduler: DAGScheduler) -> None:
         """测试并行执行多个 Python 任务。
 
         DAG 结构：A -> [B, C]（B 和 C 并行）。
@@ -352,9 +342,7 @@ class TestPythonDAG:
         assert "branch B" in result.task_results["branch_b"].output["stdout"]
 
     @pytest.mark.asyncio
-    async def test_execution_order_preserved(
-        self, python_scheduler: DAGScheduler
-    ) -> None:
+    async def test_execution_order_preserved(self, python_scheduler: DAGScheduler) -> None:
         """测试执行顺序记录。"""
         dag = DAGraph(
             dag_id="test-execution-order",

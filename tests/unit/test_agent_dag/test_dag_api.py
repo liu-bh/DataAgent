@@ -2,68 +2,10 @@
 
 from __future__ import annotations
 
-import sys
-import types
-from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-
-# 确保项目源码路径可被导入
-project_root = Path(__file__).resolve().parent.parent.parent.parent / "services" / "agent-service" / "src"
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
-
-libs_root = Path(__file__).resolve().parent.parent.parent.parent / "libs"
-for lib_dir in libs_root.iterdir():
-    if lib_dir.is_dir():
-        lib_src = lib_dir / "src"
-        if lib_src.exists() and str(lib_src) not in sys.path:
-            sys.path.insert(0, str(lib_src))
-
-
-# ---------------------------------------------------------------------------
-# Mock datapilot_dag 模块
-# ---------------------------------------------------------------------------
-
-def _setup_dag_mock() -> None:
-    """配置 datapilot_dag 模块的 mock。"""
-    if "datapilot_dag" not in sys.modules:
-        dag_module = types.ModuleType("datapilot_dag")
-        sys.modules["datapilot_dag"] = dag_module
-
-    dag_module = sys.modules["datapilot_dag"]
-
-    # mock DAGNode
-    if not hasattr(dag_module, "DAGNode"):
-        def _dagnode_init(self: MagicMock, name: str, node_type: str, func: object, params: dict | None = None) -> None:
-            self.name = name
-            self.node_type = node_type
-            self.func = func
-            self.params = params or {}
-
-        mock_node = type("DAGNode", (), {"__init__": _dagnode_init})
-        dag_module.DAGNode = mock_node
-
-    # mock DAGraph
-    if not hasattr(dag_module, "DAGraph"):
-        def _dagraph_init(self: MagicMock, dag_id: str) -> None:
-            self.dag_id = dag_id
-            self.nodes: dict = {}
-            self.context: dict = {}
-            self._edges: list = []
-
-        mock_graph = type("DAGraph", (), {
-            "__init__": _dagraph_init,
-            "generate_id": staticmethod(lambda: "test-dag-id"),
-            "add_node": lambda self, node: self.nodes.__setitem__(node.name, node),
-            "add_edge": lambda self, from_n, to_n, condition=None: self._edges.append((from_n, to_n, condition)),
-        })
-        dag_module.DAGraph = mock_graph
-
-
-_setup_dag_mock()
 
 
 # ---------------------------------------------------------------------------

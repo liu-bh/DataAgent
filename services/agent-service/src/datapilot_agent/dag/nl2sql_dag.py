@@ -84,13 +84,15 @@ class NL2SQLDAGBuilder:
         """
         from datapilot_dag import DAGraph
 
-        dag = DAGraph(dag_id=DAGraph.generate_id())
-        dag.context = {
-            "question": question,
-            "dialect": dialect,
-            "tenant_id": tenant_id,
-            "session_id": session_id,
-        }
+        dag = DAGraph(
+            dag_id=DAGraph.generate_id(),
+            context={
+                "question": question,
+                "dialect": dialect,
+                "tenant_id": tenant_id,
+                "session_id": session_id,
+            },
+        )
 
         logger.info(
             "开始构建 NL2SQL DAG",
@@ -115,13 +117,13 @@ class NL2SQLDAGBuilder:
 
     def _add_intent_route_node(self, dag: DAGraph, question: str) -> None:
         """添加意图路由节点。"""
-        from datapilot_dag import DAGNode
+        from datapilot_dag import DAGNode, TaskType
 
         node = DAGNode(
-            name=self.NODE_INTENT_ROUTE,
-            node_type=self.NODE_TYPE_LLM,
-            func=self._intent_route_func,
-            params={"question": question},
+            node_id=self.NODE_INTENT_ROUTE,
+            task_type=TaskType.LLM,
+            config={"question": question},
+            metadata={"func": self._intent_route_func},
         )
         dag.add_node(node)
 
@@ -134,89 +136,93 @@ class NL2SQLDAGBuilder:
         session_id: str,
     ) -> None:
         """添加 NL2SQL 主流程节点。"""
-        from datapilot_dag import DAGNode
+        from datapilot_dag import DAGEdge, DAGNode, TaskType
 
         # Level 1: 意图解析
         intent_parse = DAGNode(
-            name=self.NODE_INTENT_PARSE,
-            node_type=self.NODE_TYPE_LLM,
-            func=self._intent_parse_func,
-            params={"question": question},
+            node_id=self.NODE_INTENT_PARSE,
+            task_type=TaskType.LLM,
+            config={"question": question},
+            metadata={"func": self._intent_parse_func},
         )
         dag.add_node(intent_parse)
-        dag.add_edge(self.NODE_INTENT_ROUTE, self.NODE_INTENT_PARSE)
+        dag.add_edge(DAGEdge(self.NODE_INTENT_ROUTE, self.NODE_INTENT_PARSE))
 
         # Level 2: Schema Linking
         schema_link = DAGNode(
-            name=self.NODE_SCHEMA_LINK,
-            node_type=self.NODE_TYPE_COMPUTE,
-            func=self._schema_link_func,
-            params={
+            node_id=self.NODE_SCHEMA_LINK,
+            task_type=TaskType.COMPUTE,
+            config={
                 "question": question,
                 "tenant_id": tenant_id,
             },
+            metadata={"func": self._schema_link_func},
         )
         dag.add_node(schema_link)
-        dag.add_edge(self.NODE_INTENT_PARSE, self.NODE_SCHEMA_LINK)
+        dag.add_edge(DAGEdge(self.NODE_INTENT_PARSE, self.NODE_SCHEMA_LINK))
 
         # Level 3: Prompt 构建
         prompt_build = DAGNode(
-            name=self.NODE_PROMPT_BUILD,
-            node_type=self.NODE_TYPE_COMPUTE,
-            func=self._prompt_build_func,
-            params={"dialect": dialect},
+            node_id=self.NODE_PROMPT_BUILD,
+            task_type=TaskType.COMPUTE,
+            config={"dialect": dialect},
+            metadata={"func": self._prompt_build_func},
         )
         dag.add_node(prompt_build)
-        dag.add_edge(self.NODE_SCHEMA_LINK, self.NODE_PROMPT_BUILD)
+        dag.add_edge(DAGEdge(self.NODE_SCHEMA_LINK, self.NODE_PROMPT_BUILD))
 
         # Level 4: SQL 生成
         sql_generate = DAGNode(
-            name=self.NODE_SQL_GENERATE,
-            node_type=self.NODE_TYPE_LLM,
-            func=self._sql_generate_func,
-            params={"dialect": dialect},
+            node_id=self.NODE_SQL_GENERATE,
+            task_type=TaskType.LLM,
+            config={"dialect": dialect},
+            metadata={"func": self._sql_generate_func},
         )
         dag.add_node(sql_generate)
-        dag.add_edge(self.NODE_PROMPT_BUILD, self.NODE_SQL_GENERATE)
+        dag.add_edge(DAGEdge(self.NODE_PROMPT_BUILD, self.NODE_SQL_GENERATE))
 
         # Level 5: SQL 校验
         sql_validate = DAGNode(
-            name=self.NODE_SQL_VALIDATE,
-            node_type=self.NODE_TYPE_COMPUTE,
-            func=self._sql_validate_func,
+            node_id=self.NODE_SQL_VALIDATE,
+            task_type=TaskType.COMPUTE,
+            metadata={"func": self._sql_validate_func},
         )
         dag.add_node(sql_validate)
-        dag.add_edge(self.NODE_SQL_GENERATE, self.NODE_SQL_VALIDATE)
+        dag.add_edge(DAGEdge(self.NODE_SQL_GENERATE, self.NODE_SQL_VALIDATE))
 
         # Level 6: SQL 纠错（条件分支，仅校验失败时执行）
         sql_correct = DAGNode(
-            name=self.NODE_SQL_CORRECT,
-            node_type=self.NODE_TYPE_LLM,
-            func=self._sql_correct_func,
-            params={"dialect": dialect},
+            node_id=self.NODE_SQL_CORRECT,
+            task_type=TaskType.LLM,
+            config={"dialect": dialect},
+            metadata={"func": self._sql_correct_func},
         )
         dag.add_node(sql_correct)
         dag.add_edge(
-            self.NODE_SQL_VALIDATE,
-            self.NODE_SQL_CORRECT,
-            condition=self.COND_VALIDATE_FAILED,
+            DAGEdge(
+                self.NODE_SQL_VALIDATE,
+                self.NODE_SQL_CORRECT,
+                condition=self.COND_VALIDATE_FAILED,
+            )
         )
 
         # Level 7: SQL 解释（依赖校验通过或纠错完成）
         sql_explain = DAGNode(
-            name=self.NODE_SQL_EXPLAIN,
-            node_type=self.NODE_TYPE_LLM,
-            func=self._sql_explain_func,
+            node_id=self.NODE_SQL_EXPLAIN,
+            task_type=TaskType.LLM,
+            metadata={"func": self._sql_explain_func},
         )
         dag.add_node(sql_explain)
         # 从 sql_validate 直接到 sql_explain（校验通过时）
         dag.add_edge(
-            self.NODE_SQL_VALIDATE,
-            self.NODE_SQL_EXPLAIN,
-            condition=self.COND_VALIDATE_PASSED,
+            DAGEdge(
+                self.NODE_SQL_VALIDATE,
+                self.NODE_SQL_EXPLAIN,
+                condition=self.COND_VALIDATE_PASSED,
+            )
         )
         # 从 sql_correct 到 sql_explain（纠错后）
-        dag.add_edge(self.NODE_SQL_CORRECT, self.NODE_SQL_EXPLAIN)
+        dag.add_edge(DAGEdge(self.NODE_SQL_CORRECT, self.NODE_SQL_EXPLAIN))
 
     # ------------------------------------------------------------------
     # 节点执行函数占位（实际实现由 executor 调用具体服务）
@@ -333,16 +339,18 @@ class NL2SQLDAGBuilder:
         Returns:
             仅包含 chitchat 节点的 DAGraph。
         """
-        from datapilot_dag import DAGNode, DAGraph
+        from datapilot_dag import DAGNode, DAGraph, TaskType
 
-        dag = DAGraph(dag_id=DAGraph.generate_id())
-        dag.context = {"question": question, "intent": "chitchat"}
+        dag = DAGraph(
+            dag_id=DAGraph.generate_id(),
+            context={"question": question, "intent": "chitchat"},
+        )
 
         node = DAGNode(
-            name="chitchat",
-            node_type=NL2SQLDAGBuilder.NODE_TYPE_LLM,
-            func=NL2SQLDAGBuilder._chitchat_func,
-            params={"question": question},
+            node_id="chitchat",
+            task_type=TaskType.LLM,
+            config={"question": question},
+            metadata={"func": NL2SQLDAGBuilder._chitchat_func},
         )
         dag.add_node(node)
 
@@ -370,16 +378,18 @@ class NL2SQLDAGBuilder:
         Returns:
             仅包含 out_of_scope 节点的 DAGraph。
         """
-        from datapilot_dag import DAGNode, DAGraph
+        from datapilot_dag import DAGNode, DAGraph, TaskType
 
-        dag = DAGraph(dag_id=DAGraph.generate_id())
-        dag.context = {"question": question, "intent": "out_of_scope"}
+        dag = DAGraph(
+            dag_id=DAGraph.generate_id(),
+            context={"question": question, "intent": "out_of_scope"},
+        )
 
         node = DAGNode(
-            name="out_of_scope",
-            node_type=NL2SQLDAGBuilder.NODE_TYPE_COMPUTE,
-            func=NL2SQLDAGBuilder._out_of_scope_func,
-            params={"question": question},
+            node_id="out_of_scope",
+            task_type=TaskType.COMPUTE,
+            config={"question": question},
+            metadata={"func": NL2SQLDAGBuilder._out_of_scope_func},
         )
         dag.add_node(node)
 
