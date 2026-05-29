@@ -169,17 +169,14 @@ export function lineChartOption(
       symbol: 'circle',
       symbolSize: 6,
       lineStyle: { width: 2 },
-      itemStyle: { color: DARK_COLORS[idx % DARK_COLORS.length] },
+      itemStyle: { color: DARK_COLORS[idx % DARK_COLORS.length] ?? '#6366f1' },
       areaStyle: {
         color: {
-          type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
+          type: 'linear' as const,
+          x: 0, y: 0, x2: 0, y2: 1,
           colorStops: [
-            { offset: 0, color: DARK_COLORS[idx % DARK_COLORS.length] + '40' },
-            { offset: 1, color: DARK_COLORS[idx % DARK_COLORS.length] + '05' },
+            { offset: 0, color: (DARK_COLORS[idx % DARK_COLORS.length] ?? '#6366f1') + '40' },
+            { offset: 1, color: (DARK_COLORS[idx % DARK_COLORS.length] ?? '#6366f1') + '05' },
           ],
         },
       },
@@ -229,14 +226,11 @@ export function barChartOption(
       barMaxWidth: 48,
       itemStyle: {
         color: {
-          type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
+          type: 'linear' as const,
+          x: 0, y: 0, x2: 0, y2: 1,
           colorStops: [
-            { offset: 0, color: DARK_COLORS[idx % DARK_COLORS.length] },
-            { offset: 1, color: DARK_COLORS[idx % DARK_COLORS.length] + '80' },
+            { offset: 0, color: DARK_COLORS[idx % DARK_COLORS.length] ?? '#6366f1' },
+            { offset: 1, color: (DARK_COLORS[idx % DARK_COLORS.length] ?? '#6366f1') + '80' },
           ],
         },
         borderRadius: [4, 4, 0, 0],

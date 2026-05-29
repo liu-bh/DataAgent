@@ -80,7 +80,7 @@ export default function MetricsPage() {
           <span className="text-sm text-gray-500">共 {metrics.length} 个指标</span>
         </div>
         <button
-          onClick={() => setEditingMetric(null); setShowCreateModal(true)}
+          onClick={() => { setEditingMetric(null); setShowCreateModal(true); }}
           className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">

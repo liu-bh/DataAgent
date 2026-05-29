@@ -154,8 +154,8 @@ export default function PythonEditor({
             fontFamily: MONO_FONT,
             fontSize: '12px',
             lineHeight: '1.625rem',
-          }
-        />
+          }}
+        ></textarea>
       </div>
     </div>
   );

@@ -10,7 +10,6 @@ import type {
 import { apiClient } from '@/api/client';
 import {
   fetchQueryHistory as apiFetchQueryHistory,
-  clearHistory as apiClearHistory,
   fetchStarredQueries as apiFetchStarredQueries,
   starQuery as apiStarQuery,
   unstarQuery as apiUnstarQuery,
