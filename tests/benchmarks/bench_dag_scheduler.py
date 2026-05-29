@@ -1,5 +1,4 @@
 """DAG 调度器吞吐基准测试。"""
-import contextlib
 import time
 
 import pytest
@@ -44,8 +43,10 @@ async def test_dag_scheduler_throughput():
             dag_id="warmup",
             nodes={"A": MockDAGNode(node_id="A", task_type="sql", config={})},
         )
-        with contextlib.suppress(Exception):
+        try:  # noqa: SIM105
             await scheduler.execute(dag)
+        except Exception:
+            pass
 
     # 正式测试
     for i in range(iterations):

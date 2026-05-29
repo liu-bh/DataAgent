@@ -176,7 +176,7 @@ export default function DetailDrawer({ dataSourceId, onClose }: DetailDrawerProp
                         )}
                         {/* 列信息 */}
                         <div className="mt-2 flex flex-wrap gap-1">
-                          {table.columns.map((col, idx) => (
+                          {table.columns.map((col) => (
                             <span
                               key={col.name}
                               className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs ${

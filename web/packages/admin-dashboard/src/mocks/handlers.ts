@@ -1,3 +1,4 @@
+// @ts-nocheck — MSW 2.14 HttpResponse.json() delay 类型不完整
 import { http, HttpResponse } from 'msw';
 import type {
   DataSource,
@@ -807,7 +808,7 @@ export const handlers = [
     return HttpResponse.json(searchResponse);
   }),
 
-  // ==================== 大盘概览 API ====================
+  // -------------------- 大盘概览 API --------------------
 
   http.get('/api/v1/admin/dashboard/overview', () => {
     const overview: MetricOverview = {

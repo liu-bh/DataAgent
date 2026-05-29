@@ -22,7 +22,7 @@ function getPageTitle(pathname: string): string {
   const match = Object.keys(PAGE_TITLES)
     .sort((a, b) => b.length - a.length)
     .find((key) => key !== '/admin' && pathname.startsWith(key));
-  return match ? PAGE_TITLES[match] : '管理后台';
+  return match ? PAGE_TITLES[match]! : '管理后台';
 }
 
 export default function AdminLayout() {

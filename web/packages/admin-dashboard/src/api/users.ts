@@ -1,9 +1,11 @@
 import { apiClient } from './client';
 
+export type UserRole = 'admin' | 'analyst' | 'viewer';
+
 export interface User {
   id: string;
   email: string;
-  role: string;
+  role: UserRole;
   is_active: boolean;
   tenant_id: string;
   created_at: string;

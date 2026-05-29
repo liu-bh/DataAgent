@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import type { Session } from '@/api/sessions';
 import { sessionApi } from '@/api/sessions';
+import { formatDate } from '@/utils/format';
 
 /** 归档状态标签 */
 function ArchiveBadge({ archived }: { archived: boolean }) {
@@ -17,20 +18,10 @@ function ArchiveBadge({ archived }: { archived: boolean }) {
   );
 }
 
-/** 格式化日期 */
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
 export default function SessionsPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
 
   /** 加载会话列表 */
@@ -58,23 +49,29 @@ export default function SessionsPage() {
   /** 删除会话 */
   const handleDelete = async (id: string, title: string) => {
     if (!confirm(`确定要删除会话 "${title}" 吗？此操作不可撤销。`)) return;
+    setBusyId(id);
     try {
       await sessionApi.delete(id);
       await fetchSessions();
     } catch (err) {
       console.error('删除会话失败:', err);
       alert('删除失败，请稍后重试');
+    } finally {
+      setBusyId(null);
     }
   };
 
   /** 切换归档状态 */
   const handleToggleArchive = async (session: Session) => {
+    setBusyId(session.id);
     try {
       await sessionApi.update(session.id, { is_archived: !session.is_archived });
       await fetchSessions();
     } catch (err) {
       console.error('更新会话失败:', err);
       alert('更新失败，请稍后重试');
+    } finally {
+      setBusyId(null);
     }
   };
 
@@ -160,13 +157,15 @@ export default function SessionsPage() {
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => handleToggleArchive(session)}
-                        className="inline-flex items-center rounded-md border border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                        disabled={busyId === session.id}
+                        className="inline-flex items-center rounded-md border border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
                       >
                         {session.is_archived ? '取消归档' : '归档'}
                       </button>
                       <button
                         onClick={() => handleDelete(session.id, session.title || session.id)}
-                        className="inline-flex items-center rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
+                        disabled={busyId === session.id}
+                        className="inline-flex items-center rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
                       >
                         删除
                       </button>

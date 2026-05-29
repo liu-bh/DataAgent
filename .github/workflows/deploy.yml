@@ -84,6 +84,8 @@ jobs:
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
       - name: Configure kubeconfig
-        run: echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > kubeconfig && export KUBECONFIG=kubeconfig
+        run: |
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $RUNNER_TEMP/kubeconfig
+          echo "KUBECONFIG=$RUNNER_TEMP/kubeconfig" >> $GITHUB_ENV
       - name: Deploy to Kubernetes
         run: kubectl apply -f infra/k8s/ --recursive

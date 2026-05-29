@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import type {
   SemanticModel,
   Metric,
@@ -19,12 +19,8 @@ import { CanvasRenderer } from 'echarts/renderers';
 
 echarts.use([GraphChart, TooltipComponent, LegendComponent, CanvasRenderer]);
 
-/** 详情页 Props */
-interface DetailPageProps {
-  semanticModelId: string;
-}
-
-export default function DetailPage({ semanticModelId }: DetailPageProps) {
+export default function DetailPage() {
+  const { id: semanticModelId } = useParams<{ id: string }>() as { id: string };
   const navigate = useNavigate();
   const [model, setModel] = useState<SemanticModel | null>(null);
   const [metrics, setMetrics] = useState<Metric[]>([]);

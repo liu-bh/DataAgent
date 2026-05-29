@@ -1,30 +1,20 @@
 import { useEffect, useState, useCallback } from 'react';
-import type { User } from '@/api/users';
+import type { User, UserRole } from '@/api/users';
 import { userApi } from '@/api/users';
+import { formatDate } from '@/utils/format';
 
 /** 角色标签颜色 */
-const ROLE_COLORS: Record<string, string> = {
+const ROLE_COLORS: Record<UserRole, string> = {
   admin: 'bg-red-100 text-red-700',
   analyst: 'bg-blue-100 text-blue-700',
   viewer: 'bg-gray-100 text-gray-700',
 };
 
-const ROLE_LABELS: Record<string, string> = {
+const ROLE_LABELS: Record<UserRole, string> = {
   admin: '管理员',
   analyst: '分析师',
   viewer: '查看者',
 };
-
-/** 格式化日期 */
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -106,10 +96,10 @@ export default function UsersPage() {
                   <td className="whitespace-nowrap px-6 py-4">
                     <span
                       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        ROLE_COLORS[user.role] ?? ROLE_COLORS['viewer']
+                        ROLE_COLORS[user.role]
                       }`}
                     >
-                      {ROLE_LABELS[user.role] ?? user.role}
+                      {ROLE_LABELS[user.role]}
                     </span>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-center">
